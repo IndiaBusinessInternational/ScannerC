@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.3.0">
+<meta name="ibi-build" content="v2.4.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -359,7 +359,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.3.0</span>
+    <span class="version" id="versionTag">v2.4.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -436,7 +436,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.3.0</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.4.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -614,11 +614,15 @@
     <div class="field"><label for="setLang">OCR language</label><select class="inp" id="setLang"><option value="eng">English</option><option value="eng+tam">English + Tamil</option><option value="eng+hin">English + Hindi</option><option value="tam">Tamil</option><option value="hin">Hindi</option></select></div>
     <div class="card" style="margin-top:8px"><div class="card-body">
       <div class="kv"><span>Storage used</span><b id="setStorage">—</b></div>
+      <div class="kv"><span>Protected from automatic clean-up</span><b id="setPersist">—</b></div>
+      <div class="kv"><span>Average page size</span><b id="setAvg">—</b></div>
+      <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.3.0</b></div>
+      <div class="kv"><span>Version</span><b>v2.4.0</b></div>
     </div></div>
-    <div class="row" style="margin-top:12px"><button class="btn sm" id="setInstall" hidden><svg><use href="#i-install"/></svg>Install app</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
+    <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
+    <div class="row" style="margin-top:12px"><button class="btn sm" id="setInstall" hidden><svg><use href="#i-install"/></svg>Install app</button><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
   </div>
   <div class="sfoot"><button class="btn primary" data-close>Close</button></div>
 </div></div>
@@ -646,7 +650,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.3.0";
+const APP_VERSION="v2.4.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -1040,7 +1044,23 @@ async function detectOnBitmap(bm,opts){
    Page pipeline (shared by camera, import, editor)
    page = {id, docId, order, orig:Blob, w, h, corners:[[x,y]x4]|null, rot, filter, bright, contrast, proc:Blob, thumb:dataURL, ocr:string|null, ocrWords:[]|null}
 ===================================================================== */
+/* The original photo is kept so a page can be re-cropped later. Store it compactly: longest side <= 3000 px, JPEG 85 %
+   (a 12 MP camera photo is 3-5 MB; this is about 1 MB with no visible loss; the cleaned page is made at <= 2600 px anyway). */
+const ORIG_MAX=3000,ORIG_Q=0.85;
+function origNeedsCompact(page){if(!page.orig||!page.w)return false;if(page.compactSize&&page.orig.size===page.compactSize)return false;
+  return Math.max(page.w,page.h)>ORIG_MAX||page.orig.size>page.w*page.h*0.32;}
+async function compactOriginal(page){
+  if(!origNeedsCompact(page))return false;
+  try{const bm=await blobToBitmap(page.orig);const w=bmW(bm),h=bmH(bm);const k=Math.min(1,ORIG_MAX/Math.max(w,h));
+    const c=makeCanvas(Math.round(w*k),Math.round(h*k));c.getContext("2d").drawImage(bm,0,0,c.width,c.height);if(bm.close)bm.close();
+    const blob=await canvasToBlob(c,"image/jpeg",ORIG_Q);
+    if(!blob||blob.size>=page.orig.size*0.9){page.compactSize=page.orig.size;return false;}   // not worth it: keep the original
+    const kx=c.width/w,ky=c.height/h;if(page.corners)page.corners=page.corners.map(p=>[p[0]*kx,p[1]*ky]);
+    page.orig=blob;page.w=c.width;page.h=c.height;page.compactSize=blob.size;return true;
+  }catch(e){return false;}
+}
 async function renderPage(page){
+  await compactOriginal(page);
   const bm=await blobToBitmap(page.orig);
   let img=await bitmapToImageData(bm,2600);
   const sx=img.width/bmW(bm);
@@ -1058,7 +1078,7 @@ async function newPage(docId,origBlob,opts){
 }
 async function ensureDoc(docId,name){let d=docId?await Store.getDoc(docId):null;if(!d){d={id:uid(),name:name||scanName(),created:Date.now(),updated:Date.now(),pages:0,thumb:null};await Store.putDoc(d);}return d;}
 async function refreshDocMeta(docId){const d=await Store.getDoc(docId);if(!d)return;const pages=await Store.pagesOf(docId);d.pages=pages.length;d.thumb=pages.length?pages[0].thumb:null;d.text=pages.map(p=>p.ocr||"").join("\n").trim();await Store.putDoc(d);return d;}
-async function appendPage(docId,page){const pages=await Store.pagesOf(docId);page.docId=docId;page.order=pages.length?pages[pages.length-1].order+1:0;await Store.putPage(page);await refreshDocMeta(docId);return page;}
+async function appendPage(docId,page){protectStorage();const pages=await Store.pagesOf(docId);page.docId=docId;page.order=pages.length?pages[pages.length-1].order+1:0;await Store.putPage(page);await refreshDocMeta(docId);return page;}
 /* Compose two card sides on one A4 portrait page (ID card mode) */
 async function composeIdCard(blobs){
   const W=1654,H=2339,c=makeCanvas(W,H),ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
@@ -1677,6 +1697,20 @@ async function intakeSharedFiles(){
 /* =====================================================================
    SETTINGS · HELP · INSTALL · ROUTER · INIT
 ===================================================================== */
+async function refreshStorageInfo(){
+  try{
+    const persisted=navigator.storage&&navigator.storage.persisted?await navigator.storage.persisted():null;
+    $("setPersist").textContent=persisted===null?"not supported by this browser":persisted?"Yes ✓":"Not yet";
+    $("setProtect").hidden=persisted!==false;
+    let est=null;if(navigator.storage&&navigator.storage.estimate)est=await navigator.storage.estimate();
+    if(est)$("setStorage").textContent=`${fmtBytes(est.usage)} of ${fmtBytes(est.quota)}`;
+    // average from the pages actually stored (original + cleaned page + thumbnail)
+    const d=await db();const pages=await new Promise((res,rej)=>{const r=d.transaction("pages","readonly").objectStore("pages").getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error);});
+    const avg=pages.length?pages.reduce((a,p)=>a+(p.orig?p.orig.size:0)+(p.proc?p.proc.size:0)+(p.thumb?p.thumb.length:0),0)/pages.length:1.8*1048576;
+    $("setAvg").textContent=(pages.length?"":"≈ ")+fmtBytes(avg);
+    if(est&&est.quota){const room=Math.max(0,Math.floor((est.quota-est.usage)/avg));$("setRoom").textContent=`${room.toLocaleString("en-IN")} more pages`;}
+  }catch(e){}
+}
 async function openSettings(){
   segInit("setTs",settings.ts,v=>{settings.ts=+v;saveSettings();applyTheme();});
   segInit("setFilter",settings.filter,v=>{settings.filter=v;saveSettings();});
@@ -1684,7 +1718,7 @@ async function openSettings(){
   segInit("setQ",settings.q,v=>{settings.q=v;saveSettings();});
   $("setAuto").checked=!!settings.auto;$("setReview").checked=!!settings.review;$("setHiRes").checked=!!settings.hires;$("setFx").checked=!!settings.fx;$("setLang").value=settings.lang||"eng";
   $("setDocs").textContent=`${lib.docs.length||(await Store.allDocs()).length}`;
-  try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();$("setStorage").textContent=`${fmtBytes(e.usage)} of ${fmtBytes(e.quota)}`;}}catch(err){}
+  refreshStorageInfo();
   $("setInstall").hidden=!(deferredInstall||isIOS());
   openSheet("ovSettings");
 }
@@ -1692,6 +1726,7 @@ async function openSettings(){
 $("setLang").onchange=()=>{settings.lang=$("setLang").value;saveSettings();};
 $("settingsBtn").onclick=openSettings;$("helpBtn").onclick=()=>openSheet("ovHelp");
 $("setWipe").onclick=async()=>{const ok=await confirmDlg("Delete all scans",`This removes <b>every</b> document and page stored in this browser. This cannot be undone.`,"Delete everything");if(!ok)return;await Store.wipe();closeSheet("ovSettings");toast("All scans deleted");showLibrary();};
+$("setProtect").onclick=async()=>{const r=await protectStorage();await refreshStorageInfo();toast(r?"Your scans are now protected from automatic clean-up":"The browser did not allow it yet. Install the app (⋮ → Add to Home screen) and try again.",5000);};
 $("setBackup").onclick=async()=>{const docs=await Store.allDocs();if(!docs.length)return toast("Nothing to back up");await loadScript(LIB.jszip);const z=new JSZip();toast("Building backup… this may take a minute",4000);
   for(const d of docs){const pages=await Store.pagesOf(d.id);if(!pages.length)continue;const blob=await buildPDF(pages,{size:settings.size,q:"balanced",name:d.name});z.file(safeName(d.name)+".pdf",blob);}
   const out=await z.generateAsync({type:"blob"});downloadBlob(out,"IBI ScannerC backup "+safeName(scanName().replace(/^Scan /,""))+".zip");toast("Backup downloaded");};
@@ -1706,12 +1741,25 @@ window.addEventListener("hashchange",()=>{const m=location.hash.match(/^#\/doc\/
 /* service worker */
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("service-worker.js").then(reg=>{reg.addEventListener("updatefound",()=>{const nw=reg.installing;nw&&nw.addEventListener("statechange",()=>{if(nw.state==="installed"&&navigator.serviceWorker.controller)toast("A new version is ready — reopen the app to use it",4000);});});}).catch(()=>{});});}
 /* init */
+/* Ask the browser to keep this app's storage out of automatic clean-up (the standard Storage API). Chrome grants it
+   silently for installed or frequently used apps; the answer is shown in Settings. */
+async function protectStorage(){try{if(!navigator.storage||!navigator.storage.persist)return null;if(await navigator.storage.persisted())return true;return await navigator.storage.persist();}catch(e){return null;}}
+/* One-time, in the background: shrink originals saved by earlier versions (frees space for existing scans). */
+async function compactExisting(){
+  if(settings.compacted)return;
+  try{const docs=await Store.allDocs();let n=0;
+    for(const d of docs){const pages=await Store.pagesOf(d.id);for(const p of pages){if(await compactOriginal(p)){await Store.putPage(p);n++;}await sleep(30);}}
+    settings.compacted=true;saveSettings();if(n)toast(`Storage tidied: ${n} page${n>1?"s":""} now take less space`);
+  }catch(e){}
+}
 (async function init(){
   try{await db();}catch(e){toast("Storage is not available in this browser (private mode?). Scans cannot be saved.",6000);}
+  protectStorage();
   const m=location.hash.match(/^#\/doc\/([A-Za-z0-9]+)/);
   if(m)await openEditor(m[1]);else await showLibrary();
   await intakeSharedFiles();
   if(!settings.helpSeen){settings.helpSeen=true;saveSettings();openSheet("ovHelp");}
+  setTimeout(compactExisting,4000);
 })();
 })();
 </script>

@@ -1,4 +1,4 @@
-# IBI ScannerC v2.3.0
+# IBI ScannerC v2.4.0
 
 Scan documents with your phone, the way Google Scan and Adobe Scan do — in the browser, with nothing uploaded.
 
@@ -36,6 +36,7 @@ Badge (`versionTag`), `ibi-build` meta, footer, `service-worker.js` `CACHE_VERSI
 
 ## Changelog
 
+- **v2.4.0 (26 Sep 2026)** — storage: asks the browser for protected (persistent) storage and shows the status in Settings with a *Protect my scans* button; the kept original photo is stored at ≤ 3000 px / JPEG 85 % (about 3x less space), existing scans are tidied once in the background; Settings shows average page size and room left.
 - **v2.3.0 (26 Sep 2026)** — reliable edge detection on white / low-contrast surfaces: 4 edge detectors (Canny, CLAHE, morphological gradient, colour) at two scales; every outline scored by edge support and a paper-vs-table brightness step; the largest strong outline wins; steadier live outline; the live outline is reused if the photo misses; a hint appears when edges are unclear. Test set: 112 cases, 109 found, 0 wrong outlines, 0 false pages.
 - **v2.2.0 (26 Sep 2026)** — full-width camera: requests the 4:3 photo stream and fills the camera area edge to edge (no side bars); the saved photo is trimmed to exactly what the screen showed.
 - **v2.1.1 (26 Sep 2026)** — custom domain scanner.indiabusinessinternational.online; share-preview tags point at it.
