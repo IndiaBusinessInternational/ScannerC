@@ -1,4 +1,4 @@
-# IBI ScannerC v2.0.0
+# IBI ScannerC v2.1.0
 
 Scan documents with your phone, the way Google Scan and Adobe Scan do — in the browser, with nothing uploaded.
 
@@ -6,10 +6,10 @@ Scan documents with your phone, the way Google Scan and Adobe Scan do — in the
 
 ## What it does
 
-- **Camera scanning** with live edge detection (blue outline), **auto-capture** when the page is steady, torch, zoom, grid, front/back camera.
+- **Camera scanning** with live edge detection (blue outline). WhatsApp-style **Auto | Manual** switch: Auto (default) takes the photo when the page is steady; Manual gives a shutter and goes straight to corner adjustment. Also torch, zoom, grid, front/back camera.
 - **Perspective correction** — the four corners are straightened into a flat page. Adjust them any time with **Crop** (draggable corners, edge handles, magnifier).
 - **Filters:** Auto (shadow removal + white balance), Original, Colour+, Grayscale, Black & white. Brightness / contrast. Rotate.
-- **Multi-page documents:** batch capture, reorder (arrows or drag), delete, retake, add pages from the camera, photos or an existing PDF, merge documents.
+- **Multi-page documents:** batch capture, re-arrange (press-and-hold and drag on phones, drag on computers, or arrows), delete, retake, add pages from the camera, photos or an existing PDF, merge documents.
 - **Modes:** Document, **ID card** (front + back on one A4 page), Photo (no crop), **QR / Barcode** reader.
 - **OCR** on-device (Tesseract): English, Tamil, Hindi. Copy or share the text; full-text search across the library.
 - **Export:** PDF (A4 / Letter / Legal / fit-to-scan, three quality levels, optional **searchable text layer**, optional **password**), JPG, PNG, TXT. Print.
@@ -36,5 +36,6 @@ Badge (`versionTag`), `ibi-build` meta, footer, `service-worker.js` `CACHE_VERSI
 
 ## Changelog
 
+- **v2.1.0 (26 Sep 2026)** — Auto | Manual switch on the camera (Manual → corner adjustment after every shot, like WhatsApp); press-and-hold drag to re-arrange pages on phones.
 - **v2.0.0 (26 Sep 2026)** — complete rebuild as a document scanner (the v1.x page was an OCR/GST invoice analyser). Everything above is new.
 - v1.1 (Jul 2026) — OCR + GST field extraction prototype.

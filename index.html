@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.0.0">
+<meta name="ibi-build" content="v2.1.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -184,6 +184,9 @@
   .sbtn{background:rgba(255,255,255,.1);border:0;color:#fff;border-radius:12px;min-width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 10px;font-size:calc(14px*var(--ts));font-weight:500}
   .sbtn svg{width:22px;height:22px}
   .sbtn.on{background:var(--accent);color:#001018}
+  .sbtn.amode{padding:3px;gap:0;background:rgba(255,255,255,.12)}
+  .sbtn.amode span{padding:0 10px;height:38px;display:inline-flex;align-items:center;border-radius:9px;color:#cfd8e2}
+  .sbtn.amode span.on{background:var(--accent);color:#001018;font-weight:700}
   .sbtn:disabled{opacity:.4}
   #camVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
   #camOverlay{position:absolute;pointer-events:none}
@@ -259,6 +262,9 @@
   .pgc img{width:100%;height:100%;object-fit:cover;display:block}
   .pgc.cur{border-color:var(--accent)}
   .pgc.drag{opacity:.45}
+  .pgc.lift{transform:scale(1.06);box-shadow:0 10px 26px rgba(0,0,0,.5);z-index:3;border-color:var(--accent)}
+  .pgc.target{outline:3px dashed var(--accent);outline-offset:2px}
+  .pgc img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
   .pgc .n{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.7);color:#fff;font-family:var(--mono);font-size:12px;padding:1px 7px;border-radius:999px}
   .pgc .mv{position:absolute;right:4px;bottom:4px;display:flex;gap:2px}
   .pgc .mv button{width:30px;height:30px;border-radius:8px;border:0;background:rgba(0,0,0,.7);color:#fff;display:flex;align-items:center;justify-content:center;padding:0}
@@ -353,7 +359,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.0.0</span>
+    <span class="version" id="versionTag">v2.1.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -423,14 +429,14 @@
         <div class="card-head">Pages <span class="sp"></span><span id="pgCount" class="muted" style="text-transform:none;letter-spacing:0;font-weight:400"></span></div>
         <div class="card-body">
           <div class="pages" id="pages"></div>
-          <div class="muted small" style="margin-top:10px">Tap a page to open it. Use the arrows on a page to reorder. Long-press and drag also works.</div>
+          <div class="muted small" style="margin-top:10px">Tap a page to open it. To re-arrange, press and hold a page, then drag it — or use the ‹ › arrows.</div>
         </div>
       </div>
     </div>
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.0.0</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.1.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -455,8 +461,8 @@
 <div class="stage" id="camStage" role="dialog" aria-label="Camera">
   <div class="top">
     <button class="sbtn" id="camClose" title="Close camera"><svg><use href="#i-x"/></svg></button>
-    <div class="ttl" id="camTitle">Point at a document</div>
-    <button class="sbtn" id="camAuto" title="Auto-capture when the document is steady"><svg><use href="#i-auto"/></svg><span>Auto</span></button>
+    <div class="ttl" id="camTitle">Document</div>
+    <button class="sbtn amode" id="camAuto" title="Auto: the photo is taken when the page is steady. Manual: tap the shutter, then adjust the corners."><span data-m="auto">Auto</span><span data-m="manual">Manual</span></button>
     <button class="sbtn" id="camTorch" title="Torch" hidden><svg><use href="#i-flash"/></svg></button>
     <button class="sbtn" id="camFlip" title="Switch camera"><svg><use href="#i-flip"/></svg></button>
   </div>
@@ -599,7 +605,7 @@
   <div class="sbody">
     <div class="field"><label>Text size</label><div class="seg" id="setTs"><button data-v="1">Default</button><button data-v="1.12">Large</button><button data-v="1.25">Extra large</button></div></div>
     <div class="field"><label>Default filter for new scans</label><div class="seg" id="setFilter"><button data-v="auto">Auto</button><button data-v="original">Original</button><button data-v="enhance">Colour+</button><button data-v="gray">Grayscale</button><button data-v="bw">Black &amp; white</button></div></div>
-    <div class="swrow"><div class="lbl">Auto-capture<small>Takes the photo by itself once the document is steady in the frame.</small></div><label class="tgl"><input type="checkbox" id="setAuto"><span></span></label></div>
+    <div class="swrow"><div class="lbl">Auto-capture (default)<small>On: the photo is taken by itself once the page is steady. Off = Manual: tap the shutter, then adjust the corners.</small></div><label class="tgl"><input type="checkbox" id="setAuto"><span></span></label></div>
     <div class="swrow"><div class="lbl">Review corners after every capture<small>Off: pages are cropped automatically when the edges are found. You can always adjust later with Crop.</small></div><label class="tgl"><input type="checkbox" id="setReview"><span></span></label></div>
     <div class="swrow"><div class="lbl">Full-resolution stills<small>Uses the camera's photo mode when the phone supports it (sharper text).</small></div><label class="tgl"><input type="checkbox" id="setHiRes"><span></span></label></div>
     <div class="swrow"><div class="lbl">Shutter sound &amp; vibration</div><label class="tgl"><input type="checkbox" id="setFx"><span></span></label></div>
@@ -610,7 +616,7 @@
       <div class="kv"><span>Storage used</span><b id="setStorage">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.0.0</b></div>
+      <div class="kv"><span>Version</span><b>v2.1.0</b></div>
     </div></div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setInstall" hidden><svg><use href="#i-install"/></svg>Install app</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
   </div>
@@ -622,9 +628,9 @@
   <div class="sbody">
     <ol class="steps">
       <li><b>Tap the blue camera button.</b> Allow the camera when the phone asks (once).</li>
-      <li><b>Hold the phone flat over the page.</b> A blue outline appears on the document edges. Keep still — with <b>Auto</b> on, the photo is taken for you. Or tap the white shutter.</li>
+      <li><b>Hold the phone flat over the page.</b> A blue outline appears on the document edges. In <b>Auto</b> (the default) keep still and the photo is taken for you. Switch to <b>Manual</b> at the top to tap the white shutter yourself and then drag the corners.</li>
       <li><b>Keep scanning</b> for more pages. The counter at the bottom-right shows how many you have. Tap <b>Done</b> when finished.</li>
-      <li><b>Check each page.</b> Pick a filter (Auto is best for paper), <b>Crop</b> to fix corners, <b>Rotate</b> if needed, <b>Text</b> to read the words.</li>
+      <li><b>Check each page.</b> Pick a filter (Auto is best for paper), <b>Crop</b> to fix corners, <b>Rotate</b> if needed, <b>Text</b> to read the words. To re-arrange, press and hold a page in <b>Pages</b> and drag it.</li>
       <li><b>Share / Export.</b> Choose PDF, tap <b>Share…</b>, then pick WhatsApp, Gmail or Google Drive from the phone's share sheet.</li>
     </ol>
     <div class="muted small">Tips: good light, dark background under white paper, no shadows from your hand. <b>ID card</b> mode puts the front and back on one page. <b>QR / Barcode</b> reads codes. Everything stays on this phone — nothing is uploaded.</div>
@@ -640,7 +646,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.0.0";
+const APP_VERSION="v2.1.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -970,14 +976,14 @@ const camVideo=$("camVideo"),camOverlay=$("camOverlay"),camMid=$("camMid");
 function camHint(t){$("camHint").textContent=t;}
 function camSetMode(m){cam.mode=m;$$("#camModes button").forEach(b=>b.classList.toggle("on",b.dataset.mode===m));cam.idSides=[];cam.qrLast="";
   $("idHint").style.display=m==="id"?"flex":"none";$("camAuto").hidden=!(m==="doc"||m==="id");$("camShot").hidden=(m==="qr");
-  $("camTitle").textContent=m==="doc"?"Point at a document":m==="id"?"ID card — front side":m==="photo"?"Photo (no crop)":"Point at a QR or barcode";
+  $("camTitle").textContent=m==="doc"?"Document":m==="id"?"ID card · front":m==="photo"?"Photo":"QR / Barcode";
   camHint(m==="doc"?"Fill the frame with the page; keep still":m==="id"?"Fit the card inside the frame":m==="photo"?"Tap the shutter":"Hold the code inside the frame");
   if(m==="qr")loadScript(LIB.jsqr).catch(()=>{});
   clearOverlay();
 }
 $$("#camModes button").forEach(b=>b.onclick=()=>camSetMode(b.dataset.mode));
-function updateAutoBtn(){$("camAuto").classList.toggle("on",!!settings.auto);}
-$("camAuto").onclick=()=>{settings.auto=!settings.auto;saveSettings();updateAutoBtn();toast(settings.auto?"Auto-capture on — hold steady and the photo is taken for you":"Auto-capture off — tap the shutter");cam.stable=0;};
+function updateAutoBtn(){$$("#camAuto span").forEach(x=>x.classList.toggle("on",(x.dataset.m==="auto")===!!settings.auto));}
+$("camAuto").onclick=()=>{settings.auto=!settings.auto;saveSettings();updateAutoBtn();toast(settings.auto?"Auto — hold the phone steady and the photo is taken for you":"Manual — tap the shutter, then adjust the corners");if(cam.mode==="doc")camHint(settings.auto?"Fill the frame with the page; keep still":"Tap the shutter when the page is in view");cam.stable=0;};
 $("camGridBtn").onclick=()=>{cam.grid=!cam.grid;$("camGridBtn").classList.toggle("on",cam.grid);};
 $("camFlip").onclick=async()=>{cam.facing=cam.facing==="environment"?"user":"environment";await startStream();};
 $("camTorch").onclick=async()=>{if(!cam.track)return;cam.torchOn=!cam.torchOn;try{await cam.track.applyConstraints({advanced:[{torch:cam.torchOn}]});$("camTorch").classList.toggle("on",cam.torchOn);}catch(e){toast("Torch not available on this camera");cam.torchOn=false;}};
@@ -1081,11 +1087,11 @@ async function handleCapturedBlob(blob,opts){
   if(cam.mode==="id"){ // always confirm corners for ID sides — a card is small in the frame
     const c=await cropDialog(blob,corners,{okText:cam.idSides.length?"Done":"Next: back side"});if(c===null)return;
     const page=await newPage(null,blob,{corners:c.corners,rot:0});page.filter="auto";await renderPage(page);cam.idSides.push(page.proc);
-    if(cam.idSides.length<2){$("camTitle").textContent="ID card — back side";camHint("Now turn the card over");toast("Front saved — now the back side");return;}
-    const composed=await composeIdCard(cam.idSides);cam.idSides=[];$("camTitle").textContent="ID card — front side";
+    if(cam.idSides.length<2){$("camTitle").textContent="ID card · back";camHint("Now turn the card over");toast("Front saved — now the back side");return;}
+    const composed=await composeIdCard(cam.idSides);cam.idSides=[];$("camTitle").textContent="ID card · front";
     await commitPage(composed,null,{filter:"original"});return;
   }
-  if(settings.review||!corners||opts.review){const c=await cropDialog(blob,corners,{okText:"Done"});if(c===null)return;await commitPage(c.blob,c.corners,{});}
+  if(settings.review||!corners||opts.review||(opts.fromCamera&&!settings.auto)){const c=await cropDialog(blob,corners,{okText:"Done"});if(c===null)return;await commitPage(c.blob,c.corners,{});}
   else await commitPage(blob,corners,{});
 }
 async function commitPage(blob,corners,extra){
@@ -1234,7 +1240,7 @@ function renderPagesGrid(){
   const g=$("pages");g.innerHTML="";$("pgCount").textContent=`${ed.pages.length} page${ed.pages.length===1?"":"s"}`;
   ed.pages.forEach((p,i)=>{const d=document.createElement("div");d.className="pgc"+(i===ed.idx?" cur":"");d.draggable=true;d.dataset.i=i;
     d.innerHTML=`<img src="${p.thumb||""}" alt="Page ${i+1}"><span class="n">${i+1}</span><div class="mv"><button data-mv="-1" title="Move earlier"><svg><use href="#i-back"/></svg></button><button data-mv="1" title="Move later"><svg><use href="#i-fwd"/></svg></button></div>`;
-    d.onclick=e=>{const mv=e.target.closest("[data-mv]");if(mv){e.stopPropagation();movePage(i,+mv.dataset.mv);return;}ed.idx=i;renderEditor();};
+    d.onclick=e=>{if(d.dataset.justDragged){delete d.dataset.justDragged;return;}const mv=e.target.closest("[data-mv]");if(mv){e.stopPropagation();movePage(i,+mv.dataset.mv);return;}ed.idx=i;renderEditor();};
     d.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",String(i));d.classList.add("drag");});
     d.addEventListener("dragend",()=>d.classList.remove("drag"));d.addEventListener("dragover",e=>e.preventDefault());
     d.addEventListener("drop",e=>{e.preventDefault();const from=+e.dataTransfer.getData("text/plain");if(!isNaN(from)&&from!==i)movePageTo(from,i);});
@@ -1243,6 +1249,17 @@ function renderPagesGrid(){
 }
 async function savePageOrder(){for(let i=0;i<ed.pages.length;i++){if(ed.pages[i].order!==i){ed.pages[i].order=i;await Store.putPage(ed.pages[i]);}}await refreshDocMeta(ed.doc.id);}
 async function movePage(i,dir){const j=i+dir;if(j<0||j>=ed.pages.length)return;[ed.pages[i],ed.pages[j]]=[ed.pages[j],ed.pages[i]];ed.idx=j;await savePageOrder();renderEditor();}
+/* Touch / pen re-arrange: press-and-hold a page, then drag (HTML5 drag-and-drop does not work on phones) */
+const pd={timer:0,from:-1,active:false,x:0,y:0,over:-1,el:null};
+function pdCancel(){clearTimeout(pd.timer);if(pd.el)pd.el.classList.remove("lift");$$("#pages .pgc.target").forEach(x=>x.classList.remove("target"));pd.active=false;pd.from=-1;pd.el=null;pd.over=-1;}
+$("pages").addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"||e.target.closest("[data-mv]"))return;const c=e.target.closest(".pgc");if(!c)return;
+  pdCancel();pd.from=+c.dataset.i;pd.el=c;pd.x=e.clientX;pd.y=e.clientY;pd.timer=setTimeout(()=>{pd.active=true;c.classList.add("lift");vibrate(25);},380);});
+$("pages").addEventListener("pointermove",e=>{if(pd.from<0)return;if(!pd.active){if(Math.hypot(e.clientX-pd.x,e.clientY-pd.y)>10)pdCancel();return;}
+  const t=document.elementFromPoint(e.clientX,e.clientY);const c=t&&t.closest("#pages .pgc");$$("#pages .pgc.target").forEach(x=>x.classList.remove("target"));pd.over=c?+c.dataset.i:-1;if(c&&pd.over!==pd.from)c.classList.add("target");});
+document.addEventListener("touchmove",e=>{if(pd.active)e.preventDefault();},{passive:false});
+$("pages").addEventListener("pointerup",e=>{if(pd.active){const from=pd.from,to=pd.over;pd.el.dataset.justDragged="1";pdCancel();if(to>=0&&to!==from)movePageTo(from,to);}else pdCancel();});
+$("pages").addEventListener("pointercancel",()=>{if(!pd.active)pdCancel();});
+$("pages").addEventListener("contextmenu",e=>{if(e.target.closest(".pgc"))e.preventDefault();});
 async function movePageTo(from,to){const [p]=ed.pages.splice(from,1);ed.pages.splice(to,0,p);ed.idx=to;await savePageOrder();renderEditor();}
 function setBusy(on,txt){ed.busy+=on?1:-1;$("pvBusy").classList.toggle("show",ed.busy>0);if(txt)$("pvBusyTxt").textContent=txt;}
 async function rerender(p,txt){setBusy(true,txt||"Processing…");try{await renderPage(p);await Store.putPage(p);await refreshDocMeta(ed.doc.id);if(curPage()===p)renderPreview();renderPagesGrid();}catch(e){toast("Could not process the page: "+e.message);}finally{setBusy(false);}}
