@@ -1,7 +1,7 @@
 /* IBI ScannerC — Service Worker
- * CACHE_VERSION must move with the app version badge on every release (v2.0.0 -> ibi-scannerc-v2.4.1).
+ * CACHE_VERSION must move with the app version badge on every release (v2.0.0 -> ibi-scannerc-v2.5.0).
  */
-const CACHE_VERSION = 'ibi-scannerc-v2.4.1';
+const CACHE_VERSION = 'ibi-scannerc-v2.5.0';
 const RUNTIME = 'ibi-scannerc-runtime-v1';   // CDN libraries + OCR language data (versioned URLs, safe to keep)
 const SHARE = 'ibi-scannerc-share';
 const APP_SHELL = ['./', './index.html', './manifest.json', './logo.png', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-64.png'];
@@ -47,6 +47,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (req.method !== 'GET') return;
+
+  // Google sign-in and the Drive API must always go to the network (never cached).
+  if (/(^|\.)(googleapis\.com|google\.com|gstatic\.com|googleusercontent\.com)$/.test(url.hostname)) return;
 
   // Navigations: network first, cached shell when offline.
   if (req.mode === 'navigate') {

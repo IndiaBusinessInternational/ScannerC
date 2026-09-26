@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.4.1">
+<meta name="ibi-build" content="v2.5.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -154,6 +154,10 @@
   .doc:hover{border-color:var(--accent-line)}
   .doc .th{aspect-ratio:3/4;background:var(--card2);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
   .doc .th img{width:100%;height:100%;object-fit:cover;display:block}
+  .doc .cloud{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.7);color:#fff;font-size:calc(12px*var(--ts));padding:2px 8px;border-radius:999px}
+  .doc .cloud.wait{color:#ffc14d}
+  .drvbanner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);border:1px solid var(--accent-line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+  .drvbanner span{flex:1 1 180px;min-width:0}
   .doc .pg{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.7);color:#fff;font-size:calc(12px*var(--ts));padding:2px 8px;border-radius:999px;font-family:var(--mono)}
   .doc .nm{padding:8px 10px 2px;font-weight:500;font-size:calc(14px*var(--ts));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .doc .dt{padding:0 10px 10px;color:var(--muted);font-size:calc(12px*var(--ts))}
@@ -359,7 +363,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.4.1</span>
+    <span class="version" id="versionTag">v2.5.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -386,6 +390,7 @@
       <button class="btn sm" id="selModeBtn" title="Select several documents to merge, share or delete">Select</button>
     </div>
     <div id="libStats" class="muted small" style="margin-bottom:10px"></div>
+    <div class="drvbanner" id="drvBanner" hidden><span id="drvBannerTxt"></span><button class="btn sm primary" id="drvBannerBtn"><svg><use href="#i-drive"/></svg>Back up now</button></div>
     <div class="docgrid" id="docGrid"></div>
     <div class="empty" id="libEmpty" hidden>
       <svg><use href="#i-cam"/></svg>
@@ -436,7 +441,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.4.1</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.5.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -604,6 +609,15 @@
   <div class="shead"><h3>Settings</h3><button class="x" data-close><svg><use href="#i-x"/></svg></button></div>
   <div class="sbody">
     <div class="swrow" style="padding-top:0"><div class="lbl">Install app<small id="setInstallNote">Put ScannerC on your home screen: opens full screen, works offline, keeps your scans protected.</small></div><button class="btn sm primary" id="setInstall"><svg><use href="#i-install"/></svg><span id="setInstallTxt">Install app</span></button></div>
+    <div class="card" style="margin-top:12px"><div class="card-body">
+      <div class="swrow" style="padding-top:0;padding-bottom:0;border-bottom:0"><div class="lbl">Back up to Google Drive<small>Every document is saved as a PDF in the “IBI ScannerC” folder of your Google Drive and kept up to date when you edit it. ScannerC can only see the files it saves there.</small></div><label class="tgl"><input type="checkbox" id="setDrive"><span></span></label></div>
+      <div id="drvBox" hidden style="margin-top:10px;border-top:1px solid var(--border-soft);padding-top:4px">
+        <div class="kv"><span>Google account</span><b id="drvEmail">—</b></div>
+        <div class="kv"><span>Last backup</span><b id="drvLast">—</b></div>
+        <div class="kv"><span>Waiting to back up</span><b id="drvWait">—</b></div>
+        <div class="row" style="margin-top:10px"><button class="btn sm primary" id="drvNow"><svg><use href="#i-drive"/></svg>Back up now</button><button class="btn sm" id="drvOpen">Open folder in Drive</button><button class="btn sm danger" id="drvOff">Disconnect</button></div>
+      </div>
+    </div></div>
     <div class="field" style="margin-top:12px"><label>Text size</label><div class="seg" id="setTs"><button data-v="1">Default</button><button data-v="1.12">Large</button><button data-v="1.25">Extra large</button></div></div>
     <div class="field"><label>Default filter for new scans</label><div class="seg" id="setFilter"><button data-v="auto">Auto</button><button data-v="original">Original</button><button data-v="enhance">Colour+</button><button data-v="gray">Grayscale</button><button data-v="bw">Black &amp; white</button></div></div>
     <div class="swrow"><div class="lbl">Auto-capture (default)<small>On: the photo is taken by itself once the page is steady. Off = Manual: tap the shutter, then adjust the corners.</small></div><label class="tgl"><input type="checkbox" id="setAuto"><span></span></label></div>
@@ -620,7 +634,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.4.1</b></div>
+      <div class="kv"><span>Version</span><b>v2.5.0</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -657,7 +671,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.4.1";
+const APP_VERSION="v2.5.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -770,7 +784,7 @@ function req(r){return new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.o
 const Store={
   async allDocs(){return (await tx("docs","readonly",s=>s.getAll()))||[];},
   async getDoc(id){return tx("docs","readonly",s=>s.get(id));},
-  async putDoc(doc){doc.updated=Date.now();return tx("docs","readwrite",s=>s.put(doc));},
+  async putDoc(doc){doc.updated=Date.now();const r=await tx("docs","readwrite",s=>s.put(doc));try{driveSchedule();}catch(e){}return r;},
   async delDoc(id){const pages=await this.pagesOf(id);await tx("pages","readwrite",s=>{pages.forEach(p=>s.delete(p.id));});return tx("docs","readwrite",s=>s.delete(id));},
   async pagesOf(docId){const d=await db();return new Promise((res,rej)=>{const r=d.transaction("pages","readonly").objectStore("pages").index("docId").getAll(docId);r.onsuccess=()=>res((r.result||[]).sort((a,b)=>a.order-b.order));r.onerror=()=>rej(r.error);});},
   async getPage(id){return tx("pages","readonly",s=>s.get(id));},
@@ -1265,6 +1279,7 @@ async function commitPage(blob,corners,extra){
 }
 function updateCamCount(){const t=$("camThumb");if(cam.count>0){t.style.display="block";$("camCount").textContent=cam.count;if(cam.lastThumb)$("camThumbImg").src=cam.lastThumb;$("camDoneRow").hidden=false;$("camDoneTxt").textContent=`Done (${cam.count} page${cam.count>1?"s":""})`;}else{t.style.display="none";$("camDoneRow").hidden=true;}}
 async function finishSession(open){
+  if(open)driveBackupRun({fromTap:true});   // the Done tap carries the gesture a sign-in needs
   stopStream();$("camStage").classList.remove("show");$("zoomRow").style.display="none";if(!openSheets.length&&!document.querySelector(".stage.show"))document.body.classList.remove("lock");
   const docId=cam.docId;const hadPages=cam.count>0;
   if(docId){const d=await refreshDocMeta(docId);if(d&&!d.pages){await Store.delDoc(docId);}}
@@ -1446,7 +1461,7 @@ $("pvNext").onclick=()=>{ed.idx=(ed.idx+1)%ed.pages.length;renderEditor();};
 document.addEventListener("keydown",e=>{if(!$("scrEdit").classList.contains("active")||openSheets.length||document.querySelector(".stage.show")||e.target.matches("input,textarea"))return;if(e.key==="ArrowLeft")$("pvPrev").click();if(e.key==="ArrowRight")$("pvNext").click();});
 /* swipe on the preview */
 (()=>{let sx=0,sy=0;const pv=$("preview");pv.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});pv.addEventListener("touchend",e=>{const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>60&&Math.abs(dy)<50&&ed.pages.length>1){dx<0?$("pvNext").click():$("pvPrev").click();}},{passive:true});})();
-$("edBack").onclick=()=>showLibrary();
+$("edBack").onclick=()=>{showLibrary();driveBackupRun({fromTap:true});};
 $("docName").addEventListener("change",async()=>{const v=$("docName").value.trim();if(!v){$("docName").value=ed.doc.name;return;}ed.doc.name=v;await Store.putDoc(ed.doc);toast("Renamed");});
 $("docName").addEventListener("keydown",e=>{if(e.key==="Enter")e.target.blur();});
 /* tools */
@@ -1630,7 +1645,7 @@ async function renderLibrary(){
   $("libStats").textContent=lib.docs.length?`${lib.docs.length} document${lib.docs.length>1?"s":""} · ${totalPages} page${totalPages!==1?"s":""}${q?` · ${docs.length} match${docs.length!==1?"es":""}`:""}`:"";
   if(q&&!docs.length){g.innerHTML=`<div class="empty" style="grid-column:1/-1">No document matches “${escapeHtml(q)}”.</div>`;}
   docs.forEach(d=>{const el=document.createElement("div");el.className="doc"+(lib.selected.has(d.id)?" selected":"");el.dataset.id=d.id;
-    el.innerHTML=`<div class="th">${d.thumb?`<img src="${d.thumb}" alt="">`:`<svg style="width:40px;height:40px;color:var(--muted)"><use href="#i-pdf"/></svg>`}<span class="pg">${d.pages} pg</span></div><div class="nm" title="${escapeHtml(d.name)}">${escapeHtml(d.name)}</div><div class="dt">${fmtShort(d.updated)}</div><button class="more" title="More"><svg><use href="#i-more"/></svg></button><span class="sel"><svg style="width:16px;height:16px"><use href="#i-check"/></svg></span>`;
+    el.innerHTML=`<div class="th">${d.thumb?`<img src="${d.thumb}" alt="">`:`<svg style="width:40px;height:40px;color:var(--muted)"><use href="#i-pdf"/></svg>`}<span class="pg">${d.pages} pg</span>${driveOn()?(driveIsCurrent(d)?`<span class="cloud" title="Saved in Google Drive">☁ ✓</span>`:`<span class="cloud wait" title="Waiting to back up to Google Drive">☁ …</span>`):""}</div><div class="nm" title="${escapeHtml(d.name)}">${escapeHtml(d.name)}</div><div class="dt">${fmtShort(d.updated)}</div><button class="more" title="More"><svg><use href="#i-more"/></svg></button><span class="sel"><svg style="width:16px;height:16px"><use href="#i-check"/></svg></span>`;
     el.onclick=e=>{if(e.target.closest(".more")){e.stopPropagation();docMenu(d);return;}if(document.body.classList.contains("selmode")){toggleSel(d.id,el);return;}ed.idx=0;openEditor(d.id);};
     g.appendChild(el);});
 }
@@ -1702,6 +1717,110 @@ async function intakeSharedFiles(){
 }
 
 /* =====================================================================
+   GOOGLE DRIVE BACKUP  (Google Identity Services token flow, scope drive.file)
+   - drive.file: ScannerC can only see / change the files it creates itself.
+   - The sign-in window can only open on a TAP (browsers block pop-ups otherwise), so a sign-in is
+     requested on real taps (switch on, Done in the camera, Back from a document, Back up now) and
+     never from a timer. A sign-in lasts about an hour; within it, backups run by themselves.
+   - Each document = one PDF in the "IBI ScannerC" folder; later edits update the same file.
+     Deleting a scan in the app does NOT delete the Drive copy (it is a backup).
+===================================================================== */
+const DRIVE={CLIENT_ID:"861626146743-tc8qeau1ijvb0g01ujifp1v0m60gdcan.apps.googleusercontent.com",SCOPE:"https://www.googleapis.com/auth/drive.file",FOLDER:"IBI ScannerC",API:"https://www.googleapis.com/drive/v3",UP:"https://www.googleapis.com/upload/drive/v3/files"};
+const drv={token:null,exp:0,gis:null,busy:false,timer:0,lastSilent:0};
+function driveOn(){return !!settings.driveBackup;}
+function driveHasToken(){return !!drv.token&&Date.now()<drv.exp-60000;}
+function driveIsCurrent(d){return !!(d.drive&&d.drive.id&&d.drive.at>=d.updated-500);}
+function loadGis(){if(drv.gis)return drv.gis;drv.gis=loadScript("https://accounts.google.com/gsi/client").then(()=>{if(!(window.google&&google.accounts&&google.accounts.oauth2))throw new Error("Google sign-in did not load");});drv.gis.catch(()=>{drv.gis=null;});return drv.gis;}
+/* MUST be started from a tap. mode: "choose" (first connect: pick the account) | "silent" (re-use the grant; the window closes by itself) */
+function driveSignIn(mode){
+  return new Promise(async(res,rej)=>{
+    try{await loadGis();}catch(e){rej(e);return;}
+    try{
+      const c=google.accounts.oauth2.initTokenClient({client_id:DRIVE.CLIENT_ID,scope:DRIVE.SCOPE,login_hint:settings.driveEmail||undefined,
+        callback:r=>{if(r&&r.access_token){drv.token=r.access_token;drv.exp=Date.now()+(parseInt(r.expires_in,10)||3600)*1000;res(true);}
+          else{const e=new Error((r&&(r.error_description||r.error))||"Google sign-in was cancelled");e.type=r&&r.error;rej(e);}},
+        error_callback:e=>{const t=e&&e.type;const er=new Error(t==="popup_closed"?"Google sign-in window was closed":t==="popup_failed_to_open"?"The browser blocked the Google sign-in window":"Google sign-in failed");er.type=t;rej(er);}});
+      c.requestAccessToken({prompt:mode==="choose"?"select_account":""});
+    }catch(e){rej(e);}
+  });
+}
+async function dfetch(url,opts){opts=opts||{};opts.headers=Object.assign({},opts.headers||{},{Authorization:"Bearer "+drv.token});
+  const r=await fetch(url,opts);if(r.status===401){drv.token=null;const e=new Error("Google sign-in expired");e.code=401;throw e;}return r;}
+async function driveFolder(){
+  if(settings.driveFolder){const r=await dfetch(`${DRIVE.API}/files/${encodeURIComponent(settings.driveFolder)}?fields=id,trashed`);if(r.ok){const j=await r.json();if(!j.trashed)return j.id;}}
+  const q=encodeURIComponent(`name='${DRIVE.FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  let r=await dfetch(`${DRIVE.API}/files?q=${q}&fields=files(id)&spaces=drive`);let id=null;if(r.ok){const j=await r.json();id=j.files&&j.files[0]&&j.files[0].id;}
+  if(!id){r=await dfetch(`${DRIVE.API}/files?fields=id`,{method:"POST",headers:{"Content-Type":"application/json; charset=UTF-8"},body:JSON.stringify({name:DRIVE.FOLDER,mimeType:"application/vnd.google-apps.folder"})});
+    if(!r.ok)throw new Error("could not create the Drive folder ("+r.status+")");id=(await r.json()).id;}
+  settings.driveFolder=id;saveSettings();return id;
+}
+/* Resumable upload (works for any size); PATCH updates the same file when the document was backed up before */
+async function driveUpload(blob,name,fileId,docId){
+  const meta=fileId?{name}:{name,mimeType:"application/pdf",parents:[await driveFolder()],appProperties:{ibiScanDoc:docId}};
+  const url=fileId?`${DRIVE.UP}/${encodeURIComponent(fileId)}?uploadType=resumable&fields=id`:`${DRIVE.UP}?uploadType=resumable&fields=id`;
+  const r=await dfetch(url,{method:fileId?"PATCH":"POST",headers:{"Content-Type":"application/json; charset=UTF-8"},body:JSON.stringify(meta)});
+  if(fileId&&(r.status===404||r.status===403))return driveUpload(blob,name,null,docId);   // Drive copy was deleted: make a new one
+  if(!r.ok)throw new Error("Drive refused the upload ("+r.status+")");
+  const loc=r.headers.get("Location");if(!loc)throw new Error("Drive did not return an upload address");
+  const u=await fetch(loc,{method:"PUT",headers:{"Content-Type":"application/pdf"},body:blob});
+  if(!u.ok)throw new Error("upload failed ("+u.status+")");return u.json();
+}
+async function drivePending(){const docs=await Store.allDocs();return docs.filter(d=>d.pages>0&&!driveIsCurrent(d));}
+function driveSchedule(){if(!driveOn())return;clearTimeout(drv.timer);drv.timer=setTimeout(()=>driveBackupRun({}),15000);}
+/* fromTap: we are inside a user tap, so a silent sign-in may be requested if the hour has run out */
+async function driveBackupRun(opts){
+  opts=opts||{};if(!driveOn()||drv.busy)return;
+  if(opts.fromTap&&!driveHasToken())loadGis();
+  let pend=await drivePending();updateDriveUI(pend.length);if(!pend.length)return;
+  if(!driveHasToken()){
+    if(!opts.fromTap||Date.now()-drv.lastSilent<20000){updateDriveUI(pend.length,true);return;}
+    drv.lastSilent=Date.now();try{await driveSignIn("silent");}catch(e){updateDriveUI(pend.length,true);if(opts.manual)toast("Google Drive: "+e.message,5000);return;}
+  }
+  drv.busy=true;updateDriveUI(pend.length,false,true);let done=0,err=null;
+  try{
+    for(const d of pend){
+      const started=Date.now();const pages=await Store.pagesOf(d.id);if(!pages.length)continue;
+      const blob=await buildPDF(pages,{size:settings.size,q:settings.q,name:d.name});
+      const res=await driveUpload(blob,safeName(d.name)+".pdf",d.drive&&d.drive.id,d.id);
+      const fresh=await Store.getDoc(d.id);if(!fresh)continue;
+      fresh.drive={id:res.id,at:started,size:blob.size};await tx("docs","readwrite",st=>st.put(fresh));   // not putDoc: keep "updated" as it was
+      done++;
+    }
+    settings.driveLast=Date.now();saveSettings();
+  }catch(e){err=e;}
+  finally{drv.busy=false;}
+  const left=(await drivePending()).length;updateDriveUI(left,!!err&&err.code===401);
+  if(done)toast(`Saved to Google Drive: ${done} document${done>1?"s":""}`);
+  if(err&&err.code!==401)toast("Google Drive backup paused: "+err.message+". It will try again.",5000);
+  if($("scrLib").classList.contains("active"))renderLibrary();
+}
+function updateDriveUI(waiting,needTap,running){
+  const on=driveOn();$("drvBox").hidden=!on;$("setDrive").checked=on;
+  if(on){$("drvEmail").textContent=settings.driveEmail||"—";$("drvLast").textContent=settings.driveLast?fmtShort(settings.driveLast):"not yet";
+    if(waiting!=null)$("drvWait").textContent=running?`${waiting} — backing up…`:waiting?`${waiting} document${waiting>1?"s":""}`:"none ✓";}
+  const b=$("drvBanner");
+  if(on&&needTap&&waiting){b.hidden=false;$("drvBannerTxt").textContent=`${waiting} document${waiting>1?"s":""} waiting to back up to Google Drive.`;}
+  else if(!waiting||running)b.hidden=true;
+}
+async function driveConnect(){
+  try{await driveSignIn("choose");}catch(e){$("setDrive").checked=false;toast("Google Drive not connected: "+e.message,6000);return;}
+  try{const r=await dfetch(`${DRIVE.API}/about?fields=user(emailAddress)`);if(r.ok){const j=await r.json();settings.driveEmail=(j.user&&j.user.emailAddress)||"";}}catch(e){}
+  settings.driveBackup=true;saveSettings();updateDriveUI(null);toast("Google Drive connected — backing up your scans",4000);
+  try{await driveFolder();}catch(e){toast("Google Drive: "+e.message,5000);}
+  driveBackupRun({});
+}
+function driveDisconnect(){
+  try{if(drv.token&&window.google&&google.accounts&&google.accounts.oauth2)google.accounts.oauth2.revoke(drv.token,()=>{});}catch(e){}
+  drv.token=null;drv.exp=0;settings.driveBackup=false;settings.driveEmail="";saveSettings();updateDriveUI(0);if($("scrLib").classList.contains("active"))renderLibrary();
+  toast("Google Drive disconnected. Files already in Drive stay there.",4000);
+}
+$("setDrive").onchange=()=>{if($("setDrive").checked)driveConnect();else{settings.driveBackup=false;saveSettings();updateDriveUI(0);renderLibrary();toast("Automatic Drive backup is off");}};
+$("drvNow").onclick=()=>driveBackupRun({fromTap:true,manual:true});
+$("drvBannerBtn").onclick=()=>driveBackupRun({fromTap:true,manual:true});
+$("drvOff").onclick=async()=>{const ok=await confirmDlg("Disconnect Google Drive","New scans will no longer be backed up. PDFs already in your Drive stay there.","Disconnect");if(ok)driveDisconnect();};
+$("drvOpen").onclick=()=>{window.open(settings.driveFolder?`https://drive.google.com/drive/folders/${settings.driveFolder}`:"https://drive.google.com/drive/my-drive","_blank","noopener");};
+
+/* =====================================================================
    SETTINGS · HELP · INSTALL · ROUTER · INIT
 ===================================================================== */
 async function refreshStorageInfo(){
@@ -1726,6 +1845,7 @@ async function openSettings(){
   $("setAuto").checked=!!settings.auto;$("setReview").checked=!!settings.review;$("setHiRes").checked=!!settings.hires;$("setFx").checked=!!settings.fx;$("setLang").value=settings.lang||"eng";
   $("setDocs").textContent=`${lib.docs.length||(await Store.allDocs()).length}`;
   refreshStorageInfo();
+  drivePending().then(p=>updateDriveUI(p.length,driveOn()&&!driveHasToken())).catch(()=>{});
   updateInstallUI();
   openSheet("ovSettings");
 }
@@ -1796,6 +1916,7 @@ async function compactExisting(){
   await intakeSharedFiles();
   if(!settings.helpSeen){settings.helpSeen=true;saveSettings();openSheet("ovHelp");}
   setTimeout(compactExisting,4000);
+  if(driveOn()){loadGis().catch(()=>{});drivePending().then(p=>updateDriveUI(p.length,p.length>0)).catch(()=>{});}
 })();
 })();
 </script>
