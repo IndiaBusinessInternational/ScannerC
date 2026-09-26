@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.5.0">
+<meta name="ibi-build" content="v2.5.1">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -363,7 +363,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.5.0</span>
+    <span class="version" id="versionTag">v2.5.1</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -441,7 +441,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.5.0</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.5.1</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -634,7 +634,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.5.0</b></div>
+      <div class="kv"><span>Version</span><b>v2.5.1</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -671,7 +671,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.5.0";
+const APP_VERSION="v2.5.1";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -1866,7 +1866,7 @@ const inAppBrowser=()=>/WhatsApp|FBAN|FBAV|Instagram|Line\/|GSA\/|; wv\)/i.test(
 const APP_URL="https://scanner.indiabusinessinternational.online/";
 function updateInstallUI(){
   const btn=$("setInstall"),txt=$("setInstallTxt"),note=$("setInstallNote");if(!btn)return;
-  if(isStandalone()){txt.textContent="Installed ✓";btn.classList.remove("primary");btn.disabled=true;note.textContent="You are using the installed app.";}
+  if(isStandalone()){txt.textContent="Reinstall";btn.classList.remove("primary");btn.disabled=false;note.textContent="Installed ✓. If a web address shows at the top of this screen, this is an older copy — tap Reinstall.";}
   else{txt.textContent="Install app";btn.classList.add("primary");btn.disabled=false;
     note.textContent=deferredInstall?"One tap: ScannerC goes on your home screen, opens full screen, works offline and keeps your scans protected.":"Put ScannerC on your home screen: opens full screen, works offline, keeps your scans protected.";}
   $("installBtn").hidden=!(deferredInstall&&!isStandalone());
@@ -1883,8 +1883,13 @@ function installSteps(){
   h+="<div class=\"muted small\">Chrome shows its one-tap install button only after the page has fully loaded once with an internet connection. If the menu has no Install entry, reload the page and try again.</div>";
   return h;
 }
+function reinstallSteps(){
+  const li=a=>"<ol class=\"steps\">"+a.map(x=>"<li>"+x+"</li>").join("")+"</ol>";
+  return "<div class=\"muted small\" style=\"margin-bottom:8px\">A correctly installed ScannerC opens full screen, with no web address at the top. If you see an address bar, this icon is an older copy (for example one copied from a previous phone). Replace it:</div>"+
+    li(["Go to your home screen or app list and <b>long-press the ScannerC icon</b>.","Tap <b>Uninstall</b> (or <b>App info</b> \u2192 <b>Uninstall</b>), then <b>OK</b>. Your scans on this phone are kept.","Open <b>Chrome</b> and go to <b>scanner.indiabusinessinternational.online</b>.","Tap \u2699 <b>Settings</b> \u2192 <b>Install app</b> \u2192 <b>Install</b>.","Open ScannerC from the new icon."]);
+}
 async function doInstall(){
-  if(isStandalone()){toast("Already installed — you are using the app");return;}
+  if(isStandalone()){$("installSteps").innerHTML=reinstallSteps();openSheet("ovInstall");return;}
   if(deferredInstall){const ev=deferredInstall;deferredInstall=null;ev.prompt();let ok=false;try{ok=(await ev.userChoice).outcome==="accepted";}catch(e){}updateInstallUI();if(!ok)toast("Not installed. You can install any time from Settings.");return;}
   $("installSteps").innerHTML=installSteps();openSheet("ovInstall");
 }
