@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.4.0">
+<meta name="ibi-build" content="v2.4.1">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -359,7 +359,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.4.0</span>
+    <span class="version" id="versionTag">v2.4.1</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -436,7 +436,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.4.0</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.4.1</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -603,7 +603,8 @@
 <div class="overlay" id="ovSettings"><div class="sheet">
   <div class="shead"><h3>Settings</h3><button class="x" data-close><svg><use href="#i-x"/></svg></button></div>
   <div class="sbody">
-    <div class="field"><label>Text size</label><div class="seg" id="setTs"><button data-v="1">Default</button><button data-v="1.12">Large</button><button data-v="1.25">Extra large</button></div></div>
+    <div class="swrow" style="padding-top:0"><div class="lbl">Install app<small id="setInstallNote">Put ScannerC on your home screen: opens full screen, works offline, keeps your scans protected.</small></div><button class="btn sm primary" id="setInstall"><svg><use href="#i-install"/></svg><span id="setInstallTxt">Install app</span></button></div>
+    <div class="field" style="margin-top:12px"><label>Text size</label><div class="seg" id="setTs"><button data-v="1">Default</button><button data-v="1.12">Large</button><button data-v="1.25">Extra large</button></div></div>
     <div class="field"><label>Default filter for new scans</label><div class="seg" id="setFilter"><button data-v="auto">Auto</button><button data-v="original">Original</button><button data-v="enhance">Colour+</button><button data-v="gray">Grayscale</button><button data-v="bw">Black &amp; white</button></div></div>
     <div class="swrow"><div class="lbl">Auto-capture (default)<small>On: the photo is taken by itself once the page is steady. Off = Manual: tap the shutter, then adjust the corners.</small></div><label class="tgl"><input type="checkbox" id="setAuto"><span></span></label></div>
     <div class="swrow"><div class="lbl">Review corners after every capture<small>Off: pages are cropped automatically when the edges are found. You can always adjust later with Crop.</small></div><label class="tgl"><input type="checkbox" id="setReview"><span></span></label></div>
@@ -619,12 +620,18 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.4.0</b></div>
+      <div class="kv"><span>Version</span><b>v2.4.1</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
-    <div class="row" style="margin-top:12px"><button class="btn sm" id="setInstall" hidden><svg><use href="#i-install"/></svg>Install app</button><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
+    <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
   </div>
   <div class="sfoot"><button class="btn primary" data-close>Close</button></div>
+</div></div>
+
+<div class="overlay" id="ovInstall"><div class="sheet">
+  <div class="shead"><h3>Install IBI ScannerC</h3><button class="x" data-close><svg><use href="#i-x"/></svg></button></div>
+  <div class="sbody" id="installSteps"></div>
+  <div class="sfoot"><button class="btn primary" id="installCopy"><svg><use href="#i-copy"/></svg>Copy the app link</button><button class="btn" data-close>Close</button></div>
 </div></div>
 
 <div class="overlay" id="ovHelp"><div class="sheet">
@@ -650,7 +657,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.4.0";
+const APP_VERSION="v2.4.1";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -1719,7 +1726,7 @@ async function openSettings(){
   $("setAuto").checked=!!settings.auto;$("setReview").checked=!!settings.review;$("setHiRes").checked=!!settings.hires;$("setFx").checked=!!settings.fx;$("setLang").value=settings.lang||"eng";
   $("setDocs").textContent=`${lib.docs.length||(await Store.allDocs()).length}`;
   refreshStorageInfo();
-  $("setInstall").hidden=!(deferredInstall||isIOS());
+  updateInstallUI();
   openSheet("ovSettings");
 }
 ["setAuto","setReview","setHiRes","setFx"].forEach(id=>$(id).onchange=()=>{settings[id.slice(3).toLowerCase()==="hires"?"hires":id.slice(3).toLowerCase()]=$(id).checked;saveSettings();updateAutoBtn();});
@@ -1731,11 +1738,40 @@ $("setBackup").onclick=async()=>{const docs=await Store.allDocs();if(!docs.lengt
   for(const d of docs){const pages=await Store.pagesOf(d.id);if(!pages.length)continue;const blob=await buildPDF(pages,{size:settings.size,q:"balanced",name:d.name});z.file(safeName(d.name)+".pdf",blob);}
   const out=await z.generateAsync({type:"blob"});downloadBlob(out,"IBI ScannerC backup "+safeName(scanName().replace(/^Scan /,""))+".zip");toast("Backup downloaded");};
 /* install */
-let deferredInstall=null;const isIOS=()=>/iPhone|iPad|iPod/i.test(navigator.userAgent)&&!window.MSStream;
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").hidden=false;});
-window.addEventListener("appinstalled",()=>{deferredInstall=null;$("installBtn").hidden=true;toast("Installed — find IBI ScannerC on your home screen");});
-async function doInstall(){if(deferredInstall){deferredInstall.prompt();try{await deferredInstall.userChoice;}catch(e){}deferredInstall=null;$("installBtn").hidden=true;}else if(isIOS())toast("On iPhone: tap the Share icon, then “Add to Home Screen”",5000);else toast("Use the browser menu → Install app / Add to Home screen",4000);}
+let deferredInstall=null;
+const isIOS=()=>/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const isStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: minimal-ui)").matches||navigator.standalone===true;}catch(e){return false;}};
+/* WhatsApp, Instagram, Facebook, Gmail etc. open links in their own in-app browser, which cannot install web apps */
+const inAppBrowser=()=>/WhatsApp|FBAN|FBAV|Instagram|Line\/|GSA\/|; wv\)/i.test(navigator.userAgent);
+const APP_URL="https://scanner.indiabusinessinternational.online/";
+function updateInstallUI(){
+  const btn=$("setInstall"),txt=$("setInstallTxt"),note=$("setInstallNote");if(!btn)return;
+  if(isStandalone()){txt.textContent="Installed ✓";btn.classList.remove("primary");btn.disabled=true;note.textContent="You are using the installed app.";}
+  else{txt.textContent="Install app";btn.classList.add("primary");btn.disabled=false;
+    note.textContent=deferredInstall?"One tap: ScannerC goes on your home screen, opens full screen, works offline and keeps your scans protected.":"Put ScannerC on your home screen: opens full screen, works offline, keeps your scans protected.";}
+  $("installBtn").hidden=!(deferredInstall&&!isStandalone());
+}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;updateInstallUI();});
+window.addEventListener("appinstalled",()=>{deferredInstall=null;updateInstallUI();protectStorage();toast("Installed — open IBI ScannerC from your home screen",5000);});
+function installSteps(){
+  const li=a=>"<ol class=\"steps\">"+a.map(x=>"<li>"+x+"</li>").join("")+"</ol>";
+  let h="";
+  if(inAppBrowser())h+="<div class=\"qrres\" style=\"font-family:inherit;margin-bottom:12px\"><b>This link is open inside another app</b> (for example WhatsApp). Apps cannot be installed from there. Tap <b>⋮</b> (top right) → <b>Open in Chrome</b>, or copy the link below and paste it into Chrome, then tap Install app again.</div>";
+  if(isIOS())h+="<b>iPhone / iPad (Safari)</b>"+li(["Open the app in <b>Safari</b>.","Tap the <b>Share</b> icon (square with an arrow) at the bottom.","Scroll down and tap <b>Add to Home Screen</b>.","Tap <b>Add</b>. The ScannerC icon appears on your home screen."]);
+  else h+="<b>Android (Chrome)</b>"+li(["Open the app in <b>Chrome</b>.","Tap <b>⋮</b> at the top right.","Tap <b>Install app</b> (on some phones: <b>Add to Home screen</b> → <b>Install</b>).","Tap <b>Install</b>. The ScannerC icon appears on your home screen."])+
+    "<b>Samsung Internet</b>"+li(["Tap <b>≡</b> at the bottom right.","Tap <b>Add page to</b> → <b>Home screen</b>."]);
+  h+="<div class=\"muted small\">Chrome shows its one-tap install button only after the page has fully loaded once with an internet connection. If the menu has no Install entry, reload the page and try again.</div>";
+  return h;
+}
+async function doInstall(){
+  if(isStandalone()){toast("Already installed — you are using the app");return;}
+  if(deferredInstall){const ev=deferredInstall;deferredInstall=null;ev.prompt();let ok=false;try{ok=(await ev.userChoice).outcome==="accepted";}catch(e){}updateInstallUI();if(!ok)toast("Not installed. You can install any time from Settings.");return;}
+  $("installSteps").innerHTML=installSteps();openSheet("ovInstall");
+}
 $("installBtn").onclick=doInstall;$("setInstall").onclick=doInstall;
+$("installCopy").onclick=async()=>{try{await navigator.clipboard.writeText(APP_URL);toast("Link copied — paste it into Chrome");}catch(e){toast(APP_URL,6000);}};
+try{matchMedia("(display-mode: standalone)").addEventListener("change",updateInstallUI);}catch(e){}
+updateInstallUI();
 /* router */
 window.addEventListener("hashchange",()=>{const m=location.hash.match(/^#\/doc\/([A-Za-z0-9]+)/);if(m){if(!ed.doc||ed.doc.id!==m[1])openEditor(m[1]);}else if(!$("scrLib").classList.contains("active"))showLibrary();});
 /* service worker */
