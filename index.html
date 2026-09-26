@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.2.0">
+<meta name="ibi-build" content="v2.3.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -208,7 +208,7 @@
   .zoomrow{position:absolute;left:12px;right:12px;bottom:52px;z-index:2;display:none;align-items:center;gap:8px}
   .zoomrow input{flex:1}
   .ring{position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;border:4px solid rgba(0,197,255,.35);display:none;z-index:2;pointer-events:none}
-  .ring.on{display:block;animation:ring 1.1s linear forwards}
+  .ring.on{display:block;animation:ring .8s linear forwards}
   @keyframes ring{from{border-color:rgba(0,197,255,.35)}to{border-color:var(--accent);transform:scale(1.35)}}
   .idhint{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:1}
   .idhint div{width:min(80%,420px);aspect-ratio:1.586;border:2px dashed rgba(255,255,255,.6);border-radius:14px}
@@ -359,7 +359,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.2.0</span>
+    <span class="version" id="versionTag">v2.3.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -436,7 +436,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.2.0</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.3.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -500,7 +500,7 @@
 <div class="stage" id="cropStage" role="dialog" aria-label="Adjust corners">
   <div class="top">
     <button class="sbtn" id="cropCancel" title="Cancel"><svg><use href="#i-x"/></svg></button>
-    <div class="ttl">Drag the corners to the document edges</div>
+    <div class="ttl">Adjust the corners</div>
     <button class="sbtn" id="cropRot" title="Rotate"><svg><use href="#i-rot"/></svg></button>
   </div>
   <div class="mid" id="cropMid">
@@ -616,7 +616,7 @@
       <div class="kv"><span>Storage used</span><b id="setStorage">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.2.0</b></div>
+      <div class="kv"><span>Version</span><b>v2.3.0</b></div>
     </div></div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setInstall" hidden><svg><use href="#i-install"/></svg>Install app</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
   </div>
@@ -633,7 +633,7 @@
       <li><b>Check each page.</b> Pick a filter (Auto is best for paper), <b>Crop</b> to fix corners, <b>Rotate</b> if needed, <b>Text</b> to read the words. To re-arrange, press and hold a page in <b>Pages</b> and drag it.</li>
       <li><b>Share / Export.</b> Choose PDF, tap <b>Share…</b>, then pick WhatsApp, Gmail or Google Drive from the phone's share sheet.</li>
     </ol>
-    <div class="muted small">Tips: good light, dark background under white paper, no shadows from your hand. <b>ID card</b> mode puts the front and back on one page. <b>QR / Barcode</b> reads codes. Everything stays on this phone — nothing is uploaded.</div>
+    <div class="muted small">Tips: good light and no shadow from your hand. White paper on a white table works, but a darker or coloured surface under the page gives the fastest, surest edge detection. If the edges are not found, just tap the shutter and drag the corners. <b>ID card</b> mode puts the front and back on one page. <b>QR / Barcode</b> reads codes. Everything stays on this phone — nothing is uploaded.</div>
   </div>
   <div class="sfoot"><button class="btn primary" data-close>Got it</button></div>
 </div></div>
@@ -646,7 +646,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.2.0";
+const APP_VERSION="v2.3.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -894,45 +894,146 @@ function orderCorners(pts){ // -> TL,TR,BR,BL
   const tl=pts[s.indexOf(Math.min(...s))],br=pts[s.indexOf(Math.max(...s))],tr=pts[d.indexOf(Math.max(...d))],bl=pts[d.indexOf(Math.min(...d))];
   return [tl,tr,br,bl];
 }
-/* imageData: small frame (≤ ~400px). Returns corners in that frame's pixel coords or null. */
-function detectQuad(imageData){
+/* Document edge detection v2 — built for low contrast (white paper on a white table).
+   Several independent edge maps are tried; every 4-sided candidate is scored by how much of its
+   outline actually lies on detected edges, so a faint but complete paper border beats text blocks.
+   imageData: a small frame (≤ ~480 px). Returns {corners:[TL,TR,BR,BL], area, score} or null.
+   Two scales are tried: shrinking averages out fine surface grain (cloth, textured laminate). */
+let DQ_ALLOW_DARK=false;
+function detectQuad(imageData,opts){
+  DQ_ALLOW_DARK=!!(opts&&opts.allowDark);const all=[];detectQuadCore(imageData,all);
+  const top=all.reduce((m,c)=>Math.max(m,c.score),0);
+  if(top<0.85&&Math.max(imageData.width,imageData.height)>200){
+    const k=0.55,c0=makeCanvas(imageData.width,imageData.height);c0.getContext("2d").putImageData(imageData,0,0);
+    const c1=makeCanvas(Math.round(imageData.width*k),Math.round(imageData.height*k));const x=c1.getContext("2d",{willReadFrequently:true});x.drawImage(c0,0,0,c1.width,c1.height);
+    const small=[];detectQuadCore(x.getImageData(0,0,c1.width,c1.height),small);
+    small.forEach(c=>{c.corners=c.corners.map(p=>[p[0]*imageData.width/c1.width,p[1]*imageData.height/c1.height]);c.via+="@small";all.push(c);});
+  }
+  return pickPage(all);
+}
+/* Among the plausible outlines, a text block or a photo INSIDE the page can score almost as well as the page.
+   Like commercial scanners, take the LARGEST outline that is nearly as well supported as the best one. */
+function pickPage(all){
+  if(!all.length)return null;const top=Math.max(...all.map(c=>c.score));
+  const ok=all.filter(c=>c.score>=Math.max(0.62,top-0.1));
+  ok.sort((a,b)=>(b.area-a.area)||(b.score-a.score));return ok[0]||null;
+}
+function detectQuadCore(imageData,found){
   if(!CV)return null;const cv=CV;
-  const src=cv.matFromImageData(imageData);const gray=new cv.Mat(),blur=new cv.Mat(),edges=new cv.Mat(),kernel=cv.Mat.ones(3,3,cv.CV_8U);
+  const W=imageData.width,H=imageData.height,frame=W*H,minSide=Math.min(W,H);
+  const mats=[];const M=m=>{mats.push(m);return m;};
+  const src=M(cv.matFromImageData(imageData)),gray=M(new cv.Mat()),blur=M(new cv.Mat()),tmp=M(new cv.Mat());
+  const k3=M(cv.Mat.ones(3,3,cv.CV_8U)),k5=M(cv.getStructuringElement(cv.MORPH_ELLIPSE,new cv.Size(5,5)));
   let best=null;
-  try{
-    cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY);cv.GaussianBlur(gray,blur,new cv.Size(5,5),0);
-    const W=imageData.width,H=imageData.height,minArea=W*H*0.10;
-    const attempts=[[60,180],[30,100]];
-    for(const [lo,hi] of attempts){
-      cv.Canny(blur,edges,lo,hi);cv.dilate(edges,edges,kernel);
-      const contours=new cv.MatVector(),hier=new cv.Mat();
-      cv.findContours(edges,contours,hier,cv.RETR_LIST,cv.CHAIN_APPROX_SIMPLE);
-      const cands=[];for(let i=0;i<contours.size();i++){const c=contours.get(i);const a=cv.contourArea(c);if(a>=minArea)cands.push({c,a});else c.delete();}
-      cands.sort((a,b)=>b.a-a.a);
-      for(const {c,a} of cands){
-        const peri=cv.arcLength(c,true);const approx=new cv.Mat();cv.approxPolyDP(c,approx,0.02*peri,true);
-        if(approx.rows===4&&cv.isContourConvex(approx)){const pts=[];for(let i=0;i<4;i++)pts.push([approx.data32S[i*2],approx.data32S[i*2+1]]);
-          const q=orderCorners(pts);
-          // reject degenerate quads (an edge shorter than 15% of the frame)
-          const e=[0,1,2,3].map(i=>Math.hypot(q[i][0]-q[(i+1)%4][0],q[i][1]-q[(i+1)%4][1]));
-          if(Math.min(...e)>Math.min(W,H)*0.15){best={corners:q,area:a/(W*H)};}
-        }
-        approx.delete();if(best)break;
-      }
-      cands.forEach(x=>x.c.delete());contours.delete();hier.delete();
-      if(best)break;
+  const consider=(edge,label)=>{
+    // close small gaps so a faint border becomes one contour
+    const closed=M(new cv.Mat());cv.morphologyEx(edge,closed,cv.MORPH_CLOSE,k5);cv.dilate(closed,closed,k3);
+    const contours=new cv.MatVector(),hier=new cv.Mat();
+    cv.findContours(closed,contours,hier,cv.RETR_LIST,cv.CHAIN_APPROX_SIMPLE);
+    const n=contours.size();
+    const dd=closed.data;let on=0;for(let j=0;j<dd.length;j+=7)if(dd[j])on++;const density=on/Math.ceil(dd.length/7);
+    for(let i=0;i<n;i++){
+      const c=contours.get(i);const ca=cv.contourArea(c);
+      if(ca<frame*0.08){c.delete();continue;}
+      const hull=new cv.Mat();cv.convexHull(c,hull,false,true);const peri=cv.arcLength(hull,true);
+      let q=null;
+      for(const eps of [0.02,0.03,0.045,0.065,0.09]){const ap=new cv.Mat();cv.approxPolyDP(hull,ap,eps*peri,true);
+        if(ap.rows===4&&cv.isContourConvex(ap)){q=[];for(let j=0;j<4;j++)q.push([ap.data32S[j*2],ap.data32S[j*2+1]]);}
+        ap.delete();if(q||0)break;}
+      hull.delete();c.delete();
+      if(!q)continue;
+      q=orderCorners(q);
+      const cand=scoreQuad(q,closed,blur,W,H,minSide,density);
+      if(cand){cand.via=label;found.push(cand);if(!best||cand.score>best.score)best=cand;}
     }
-  }catch(e){best=null;}
-  finally{src.delete();gray.delete();blur.delete();edges.delete();kernel.delete();}
+    contours.delete();hier.delete();
+  };
+  try{
+    cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY);
+    cv.GaussianBlur(gray,blur,new cv.Size(5,5),0);
+    // 1) ordinary contrast (dark or coloured table)
+    let e=M(new cv.Mat());cv.Canny(blur,e,60,180);consider(e,"canny");
+    // 2) low contrast: local contrast boost (CLAHE) then a sensitive Canny
+    if(!best||best.score<0.9){
+      const cl=new cv.CLAHE(3.0,new cv.Size(8,8));const g2=M(new cv.Mat());cl.apply(gray,g2);cl.delete();
+      cv.GaussianBlur(g2,g2,new cv.Size(5,5),0);const e2=M(new cv.Mat());cv.Canny(g2,e2,20,60);consider(e2,"clahe");
+    }
+    // 3) very low contrast: morphological gradient of the smoothed image, Otsu threshold
+    if(!best||best.score<0.9){
+      const sm=M(new cv.Mat());cv.medianBlur(gray,sm,5);cv.GaussianBlur(sm,sm,new cv.Size(5,5),0);
+      const gr=M(new cv.Mat());cv.morphologyEx(sm,gr,cv.MORPH_GRADIENT,k5);
+      const th=M(new cv.Mat());cv.threshold(gr,th,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU);consider(th,"gradient");
+    }
+    // 4) colour difference (cream paper on a white table, white paper on a tinted one)
+    if(!best||best.score<0.9){
+      const hsv=M(new cv.Mat());const rgb=M(new cv.Mat());cv.cvtColor(src,rgb,cv.COLOR_RGBA2RGB);cv.cvtColor(rgb,hsv,cv.COLOR_RGB2HSV);
+      const ch=new cv.MatVector();cv.split(hsv,ch);const sat=M(ch.get(1).clone());ch.delete();
+      cv.GaussianBlur(sat,sat,new cv.Size(7,7),0);const gs=M(new cv.Mat());cv.morphologyEx(sat,gs,cv.MORPH_GRADIENT,k5);
+      const ts=M(new cv.Mat());cv.threshold(gs,ts,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU);consider(ts,"colour");
+    }
+  }catch(err){best=null;}
+  finally{mats.forEach(m=>{try{m.delete();}catch(e){}});}
   return best;
 }
+/* Geometry checks + edge support. Returns null for anything that is not a plausible sheet of paper. */
+function scoreQuad(q,edge,g,W,H,minSide,density){
+  const side=i=>Math.hypot(q[i][0]-q[(i+1)%4][0],q[i][1]-q[(i+1)%4][1]);
+  const s=[0,1,2,3].map(side);if(Math.min(...s)<minSide*0.15)return null;
+  // corner angles 50°–130°
+  for(let i=0;i<4;i++){const a=q[(i+3)%4],b=q[i],c=q[(i+1)%4];const v1=[a[0]-b[0],a[1]-b[1]],v2=[c[0]-b[0],c[1]-b[1]];
+    const cos=(v1[0]*v2[0]+v1[1]*v2[1])/(Math.hypot(...v1)*Math.hypot(...v2)||1);const ang=Math.acos(Math.max(-1,Math.min(1,cos)))*180/Math.PI;if(ang<50||ang>130)return null;}
+  let area=0;for(let i=0;i<4;i++)area+=q[i][0]*q[(i+1)%4][1]-q[(i+1)%4][0]*q[i][1];area=Math.abs(area)/2;
+  const af=area/(W*H);if(af<0.12||af>0.985)return null;
+  // opposite sides should be roughly comparable (perspective, not a sliver)
+  if(Math.min(s[0],s[2])/Math.max(s[0],s[2])<0.45||Math.min(s[1],s[3])/Math.max(s[1],s[3])<0.45)return null;
+  // a "quad" hugging the frame border on 3+ sides is the frame, not a page
+  const m=3;let onBorder=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];
+    if((a[0]<m&&b[0]<m)||(a[1]<m&&b[1]<m)||(a[0]>W-1-m&&b[0]>W-1-m)||(a[1]>H-1-m&&b[1]>H-1-m))onBorder++;}
+  if(onBorder>=3)return null;
+  // edge support: fraction of points along the 4 sides that sit on (or next to) an edge pixel
+  const d=edge.data,step=edge.cols;let hit=0,tot=0,worst=1;
+  for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];let h=0,t=0;
+    for(let k=1;k<40;k++){const x=Math.round(a[0]+(b[0]-a[0])*k/40),y=Math.round(a[1]+(b[1]-a[1])*k/40);
+      if(x<1||y<1||x>=W-1||y>=H-1)continue;t++;
+      if(d[y*step+x]||d[y*step+x+1]||d[y*step+x-1]||d[(y+1)*step+x]||d[(y-1)*step+x])h++;}
+    if(t){hit+=h;tot+=t;worst=Math.min(worst,h/t);}}
+  const support=tot?hit/tot:0;if(support<0.6||worst<0.35)return null;
+  // the outline must stand out from surface grain: on a busy texture edges are everywhere
+  if(support<density+0.35)return null;
+  // brightness step across every side (paper vs table), measured a few pixels inside and outside
+  const gd=g.data,gs=g.cols,cx=(q[0][0]+q[1][0]+q[2][0]+q[3][0])/4,cy=(q[0][1]+q[1][1]+q[2][1]+q[3][1])/4,off=Math.max(3,Math.round(minSide/70));
+  const px=(x,y)=>{x=Math.max(0,Math.min(W-1,Math.round(x)));y=Math.max(0,Math.min(H-1,Math.round(y)));return gd[y*gs+x];};
+  let steps=[],pos=0,neg=0;
+  for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];let nx=-(b[1]-a[1]),ny=b[0]-a[0];const L=Math.hypot(nx,ny)||1;nx/=L;ny/=L;
+    const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;if((cx-mx)*nx+(cy-my)*ny<0){nx=-nx;ny=-ny;}
+    let sIn=0,sOut=0,cnt=0;
+    for(let k=3;k<28;k++){const x=a[0]+(b[0]-a[0])*k/30,y=a[1]+(b[1]-a[1])*k/30;
+      const ox=x-nx*off,oy=y-ny*off;if(ox<0||oy<0||ox>W-1||oy>H-1)continue;  // side at the frame edge: no outside to compare
+      sIn+=px(x+nx*off,y+ny*off);sOut+=px(ox,oy);cnt++;}
+    if(cnt<6){steps.push(null);continue;}
+    const dlt=(sIn-sOut)/cnt;steps.push(dlt);if(dlt>0)pos++;else neg++;}
+  const measured=steps.filter(v=>v!==null);
+  if(measured.length<2)return null;
+  const weak=measured.filter(v=>Math.abs(v)<2.5).length;
+  if(weak>1)return null;                       // at most one side may be faint (e.g. lit from that side)
+  if(Math.max(pos,neg)<measured.length-1)return null;  // one consistent step all round
+  // inside clearly DARKER all round and small = a block of print on the page, not the paper (dark cards/envelopes: large, or ID mode)
+  if(neg>=Math.max(2,measured.length-1)&&af<0.4&&!DQ_ALLOW_DARK)return null;
+  const contrast=Math.min(1,measured.reduce((a,v)=>a+Math.abs(v),0)/measured.length/20);
+  return {corners:q,area:af,score:support*0.55+Math.min(1,af/0.5)*0.25+contrast*0.2};
+}
 /* Detect on a full bitmap/canvas: scales down, detects, scales corners back up. */
-async function detectOnBitmap(bm){
+async function detectOnBitmap(bm,opts){
   try{await loadCV();}catch(e){return null;}
-  const w=bmW(bm),h=bmH(bm);const s=Math.min(1,480/Math.max(w,h));const c=makeCanvas(Math.round(w*s),Math.round(h*s));
-  c.getContext("2d",{willReadFrequently:true}).drawImage(bm,0,0,c.width,c.height);
-  const r=detectQuad(c.getContext("2d").getImageData(0,0,c.width,c.height));if(!r)return null;
-  return {corners:r.corners.map(p=>[p[0]/s,p[1]/s]),area:r.area};
+  const w=bmW(bm),h=bmH(bm);
+  // a still is not time-critical: try a second size before giving up (fine surface grain averages out when smaller)
+  for(const size of [480,360]){
+    const s=Math.min(1,size/Math.max(w,h));const c=makeCanvas(Math.round(w*s),Math.round(h*s));const ctx=c.getContext("2d",{willReadFrequently:true});
+    ctx.drawImage(bm,0,0,c.width,c.height);
+    const r=detectQuad(ctx.getImageData(0,0,c.width,c.height),opts);
+    if(r)return {corners:r.corners.map(p=>[p[0]/s,p[1]/s]),area:r.area};
+  }
+  return null;
 }
 
 /* =====================================================================
@@ -996,7 +1097,7 @@ $("camGallery").onclick=()=>{$("fileImg").dataset.target="camera";$("fileImg").c
 $("camShot").onclick=()=>captureNow(false);
 
 async function openCamera(opts){
-  opts=opts||{};cam.docId=opts.docId||null;cam.retakeId=opts.retakeId||null;cam.returnTo=opts.returnTo||"lib";cam.count=opts.count|0;cam.lastThumb=null;cam.idSides=[];cam.armed=true;cam.shotQuad=null;cam.missing=0;cam.stable=0;cam.busy=false;
+  opts=opts||{};cam.docId=opts.docId||null;cam.retakeId=opts.retakeId||null;cam.returnTo=opts.returnTo||"lib";cam.count=opts.count|0;cam.lastThumb=null;cam.idSides=[];cam.armed=true;cam.shotQuad=null;cam.missing=0;cam.stable=0;cam.busy=false;cam.shown=null;cam.liveFrac=null;cam.noDocSince=0;cam.shotSig=null;cam.sig=null;cam.seenAt=0;
   $("camStage").classList.add("show");document.body.classList.add("lock");updateAutoBtn();camSetMode(opts.mode||"doc");
   updateCamCount();$("camDoneRow").hidden=true;
   loadCV().then(()=>{if(cam.on)camHint("Edges will be outlined in blue");}).catch(()=>{camHint("Edge detection engine unavailable offline — crop manually after capture");});
@@ -1037,6 +1138,13 @@ function drawOverlay(quad,scale,hot){
 }
 const _small=makeCanvas(320,240);
 function grabSmall(maxW){const vw=camVideo.videoWidth,vh=camVideo.videoHeight;if(!vw)return null;const s=Math.min(1,maxW/vw);_small.width=Math.round(vw*s);_small.height=Math.round(vh*s);const ctx=_small.getContext("2d",{willReadFrequently:true});ctx.drawImage(camVideo,0,0,_small.width,_small.height);return {img:ctx.getImageData(0,0,_small.width,_small.height),s};}
+/* live-frame corners → fractions of what the SCREEN shows (the still is trimmed to the same view) */
+function toViewFrac(quad,g){const r=videoRect(),W=camMid.clientWidth,H=camMid.clientHeight,vw=camVideo.videoWidth,vh=camVideo.videoHeight;
+  const fx0=-r.x/r.w,fx1=(W-r.x)/r.w,fy0=-r.y/r.h,fy1=(H-r.y)/r.h;
+  return quad.map(p=>{const fx=p[0]/g.s/vw,fy=p[1]/g.s/vh;return [clamp((fx-fx0)/(fx1-fx0),0,1),clamp((fy-fy0)/(fy1-fy0),0,1)];});}
+const _sig=makeCanvas(24,32);
+function viewSig(){const x=_sig.getContext("2d",{willReadFrequently:true});x.drawImage(_small,0,0,24,32);const d=x.getImageData(0,0,24,32).data;const o=new Uint8Array(24*32);for(let i=0;i<o.length;i++)o[i]=(d[i*4]+d[i*4+1]+d[i*4+2])/3;return o;}
+function sigDiff(a,b){if(!a||!b)return 255;let t=0;for(let i=0;i<a.length;i++)t+=Math.abs(a[i]-b[i]);return t/a.length;}
 function quadMoved(a,b){if(!a||!b)return 1;let m=0;for(let i=0;i<4;i++)m=Math.max(m,Math.hypot(a[i][0]-b[i][0],a[i][1]-b[i][1]));return m;}
 async function camLoop(){
   if(!cam.on)return;
@@ -1045,19 +1153,31 @@ async function camLoop(){
     if(cam.busy){/* wait */}
     else if((cam.mode==="doc"||cam.mode==="id")&&CV&&camVideo.readyState>=2){
       const g=grabSmall(360);
-      if(g){const r=detectQuad(g.img);const quad=r?r.corners:null;
+      if(g){const r=detectQuad(g.img,{allowDark:cam.mode==="id"});const quad=r?r.corners:null;
+        const sig=viewSig();cam.sig=sig;
+        // after a shot: a clear change in the view (hand turning the page, next sheet placed) re-arms, even in the same spot
+        if(!cam.armed&&cam.shotSig&&sigDiff(sig,cam.shotSig)>14){cam.armed=true;cam.shotQuad=null;cam.stable=0;if(settings.auto)camHint("Hold still…");}
         const dpr=camOverlay.width/(videoRect().w||1);const scale=(1/g.s)*videoRect().s*dpr;
         const F=Math.max(g.img.width,g.img.height);
-        if(quad){const mv=quadMoved(quad,cam.lastQuad)/F;cam.stable=mv<0.02?cam.stable+1:0;cam.lastQuad=quad;cam.missing=0;
+        if(quad){const mv=quadMoved(quad,cam.lastQuad)/F;cam.stable=mv<0.025?cam.stable+1:0;cam.lastQuad=quad;cam.missing=0;cam.noDocSince=0;cam.seenAt=performance.now();
+          cam.liveFrac=toViewFrac(quad,g);cam.liveAt=performance.now();
+          // smooth what is DRAWN so the outline does not jitter (detection itself stays raw)
+          cam.shown=cam.shown&&mv<0.08?cam.shown.map((p,k)=>[p[0]*0.5+quad[k][0]*0.5,p[1]*0.5+quad[k][1]*0.5]):quad.map(p=>p.slice());
           // after an auto-shot, re-arm only when a DIFFERENT page is in view (moved well away from the captured one)
           if(!cam.armed&&cam.shotQuad&&quadMoved(quad,cam.shotQuad)/F>0.10)cam.armed=true;
-          const hot=settings.auto&&cam.armed&&cam.stable>=6;drawOverlay(quad,scale,hot);
+          const hot=settings.auto&&cam.armed&&cam.stable>=5;drawOverlay(cam.shown,scale,hot);
           if(!cam.armed&&settings.auto&&!cam.busy)camHint("Captured. Turn to the next page, or tap Done");
-          if(hot&&!cam.ringOn){cam.ringOn=true;$("camRing").classList.add("on");camHint("Hold still…");setTimeout(()=>{$("camRing").classList.remove("on");cam.ringOn=false;if(cam.on&&settings.auto&&cam.armed&&cam.stable>=6&&!cam.busy){cam.armed=false;cam.shotQuad=cam.lastQuad;captureNow(true);}},1100);}
-        }else{cam.stable=0;cam.missing=(cam.missing|0)+1;
+          if(hot&&!cam.ringOn){cam.ringOn=true;$("camRing").classList.add("on");camHint("Hold still…");setTimeout(()=>{$("camRing").classList.remove("on");cam.ringOn=false;if(cam.on&&settings.auto&&cam.armed&&cam.stable>=5&&!cam.busy){cam.armed=false;cam.shotQuad=cam.lastQuad;cam.shotSig=cam.sig;captureNow(true);}},800);}
+        }else{cam.missing=(cam.missing|0)+1;
+          // one to three missed frames (low contrast, motion blur) keep the last outline: no flicker, no lost progress
+          if(cam.missing<=3&&cam.shown){drawOverlay(cam.shown,scale,false);}
+          else{cam.stable=0;cam.shown=null;drawOverlay(null);}
           // page out of view for ~1.5 s (hand turning the page, next sheet coming in) → ready for the next shot
-          if(cam.missing>11){cam.lastQuad=null;if(!cam.armed){cam.armed=true;cam.shotQuad=null;camHint("Ready for the next page");}}
-          drawOverlay(null);}
+          if(performance.now()-(cam.seenAt||0)>1200){cam.lastQuad=null;if(!cam.armed){cam.armed=true;cam.shotQuad=null;camHint("Ready for the next page");}}
+          // no edges for a while: say what helps, and that the shutter still works
+          if(cam.armed&&cam.mode==="doc"){cam.noDocSince=cam.noDocSince||performance.now();
+            if(performance.now()-cam.noDocSince>4000)camHint(settings.auto?"Edges not clear — move a little closer, or tap the shutter and drag the corners":"Tap the shutter, then drag the corners");}
+        }
       }
     }else if(cam.mode==="qr"&&camVideo.readyState>=2){await scanCodeFrame();}
     else drawOverlay(null);
@@ -1083,8 +1203,8 @@ async function takeRawStill(){
 async function captureNow(auto){
   if(cam.busy||!cam.on||!camVideo.videoWidth){if(!camVideo.videoWidth)toast("Camera is not ready yet");return;}
   if(cam.mode==="qr"){await scanCodeFrame(true);return;}
-  cam.busy=true;if(!auto){cam.armed=false;cam.shotQuad=cam.lastQuad;}$("camShot").classList.add("busy");shutterSound();vibrate(30);
-  try{const blob=await takeStill();camVideo.style.opacity=".4";setTimeout(()=>camVideo.style.opacity="",120);await handleCapturedBlob(blob,{fromCamera:true});}
+  cam.busy=true;if(!auto){cam.armed=false;cam.shotQuad=cam.lastQuad;cam.shotSig=cam.sig;}$("camShot").classList.add("busy");shutterSound();vibrate(30);
+  try{const live=(cam.liveFrac&&performance.now()-(cam.liveAt||0)<800)?cam.liveFrac.map(p=>p.slice()):null;const blob=await takeStill();camVideo.style.opacity=".4";setTimeout(()=>camVideo.style.opacity="",120);await handleCapturedBlob(blob,{fromCamera:true,liveQuad:live});}
   catch(e){toast("Capture failed: "+e.message);}
   finally{cam.busy=false;$("camShot").classList.remove("busy");cam.stable=0;}
 }
@@ -1093,9 +1213,12 @@ async function handleCapturedBlob(blob,opts){
   opts=opts||{};
   if(cam.mode==="photo"&&opts.fromCamera){await commitPage(blob,null,{filter:"original"});return;}
   const bm=await blobToBitmap(blob);
-  let det=null;try{det=await detectOnBitmap(bm);}catch(e){}
+  let det=null;try{det=await detectOnBitmap(bm,{allowDark:cam.mode==="id"});}catch(e){}
+  const bw=bmW(bm),bh=bmH(bm);
   if(bm.close)bm.close();
-  const corners=det&&det.area>=0.12?det.corners:null;
+  let corners=det&&det.area>=0.12?det.corners:null;
+  // the still missed the edges but the live view had them a moment ago: reuse that outline and let the user confirm it
+  if(!corners&&opts.liveQuad){corners=opts.liveQuad.map(p=>[p[0]*bw,p[1]*bh]);opts.review=true;}
   if(cam.mode==="id"){ // always confirm corners for ID sides — a card is small in the frame
     const c=await cropDialog(blob,corners,{okText:cam.idSides.length?"Done":"Next: back side"});if(c===null)return;
     const page=await newPage(null,blob,{corners:c.corners,rot:0});page.filter="auto";await renderPage(page);cam.idSides.push(page.proc);
