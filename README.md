@@ -1,4 +1,4 @@
-# IBI ScannerC v2.1.1
+# IBI ScannerC v2.2.0
 
 Scan documents with your phone, the way Google Scan and Adobe Scan do — in the browser, with nothing uploaded.
 
@@ -36,6 +36,7 @@ Badge (`versionTag`), `ibi-build` meta, footer, `service-worker.js` `CACHE_VERSI
 
 ## Changelog
 
+- **v2.2.0 (26 Sep 2026)** — full-width camera: requests the 4:3 photo stream and fills the camera area edge to edge (no side bars); the saved photo is trimmed to exactly what the screen showed.
 - **v2.1.1 (26 Sep 2026)** — custom domain scanner.indiabusinessinternational.online; share-preview tags point at it.
 - **v2.1.0 (26 Sep 2026)** — Auto | Manual switch on the camera (Manual → corner adjustment after every shot, like WhatsApp); press-and-hold drag to re-arrange pages on phones.
 - **v2.0.0 (26 Sep 2026)** — complete rebuild as a document scanner (the v1.x page was an OCR/GST invoice analyser). Everything above is new.

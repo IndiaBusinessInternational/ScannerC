@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.1.1">
+<meta name="ibi-build" content="v2.2.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -188,7 +188,7 @@
   .sbtn.amode span{padding:0 10px;height:38px;display:inline-flex;align-items:center;border-radius:9px;color:#cfd8e2}
   .sbtn.amode span.on{background:var(--accent);color:#001018;font-weight:700}
   .sbtn:disabled{opacity:.4}
-  #camVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+  #camVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
   #camOverlay{position:absolute;pointer-events:none}
   .modes{display:flex;justify-content:center;gap:6px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none}
   .modes::-webkit-scrollbar{display:none}
@@ -359,7 +359,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.1.1</span>
+    <span class="version" id="versionTag">v2.2.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -436,7 +436,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.1.1</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.2.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -616,7 +616,7 @@
       <div class="kv"><span>Storage used</span><b id="setStorage">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.1.1</b></div>
+      <div class="kv"><span>Version</span><b>v2.2.0</b></div>
     </div></div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setInstall" hidden><svg><use href="#i-install"/></svg>Install app</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
   </div>
@@ -646,7 +646,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.1.1";
+const APP_VERSION="v2.2.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -1005,7 +1005,9 @@ async function openCamera(opts){
 async function startStream(){
   stopStream();
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camHint("This browser has no camera access — using the phone's camera app");$("fileCapture").click();return;}
-  const tries=[{video:{facingMode:{ideal:cam.facing},width:{ideal:3840},height:{ideal:2160}},audio:false},{video:{facingMode:{ideal:cam.facing},width:{ideal:1920},height:{ideal:1080}},audio:false},{video:true,audio:false}];
+  // 4:3 is the camera's native photo shape (what WhatsApp / Adobe / Google scanners use): in portrait it fills a phone's camera area edge to edge
+  const fm={facingMode:{ideal:cam.facing}};
+  const tries=[{video:Object.assign({width:{ideal:4032},height:{ideal:3024},aspectRatio:{ideal:4/3}},fm),audio:false},{video:Object.assign({width:{ideal:2560},height:{ideal:1920},aspectRatio:{ideal:4/3}},fm),audio:false},{video:Object.assign({width:{ideal:1920},height:{ideal:1080}},fm),audio:false},{video:true,audio:false}];
   let err;for(const c of tries){try{cam.stream=await navigator.mediaDevices.getUserMedia(c);err=null;break;}catch(e){err=e;}}
   if(err){camHint("Camera blocked. Allow the camera in the browser's site settings, or use the gallery button.");if(err.name==="NotAllowedError")toast("Camera permission denied. Tap the lock icon in the address bar → Permissions → Camera → Allow.",5000);else $("fileCapture").click();return;}
   cam.track=cam.stream.getVideoTracks()[0];camVideo.srcObject=cam.stream;cam.on=true;
@@ -1017,7 +1019,7 @@ async function startStream(){
   layoutOverlay();camLoop();
 }
 function stopStream(){cam.on=false;clearTimeout(cam.loopTimer);if(cam.stream){cam.stream.getTracks().forEach(t=>t.stop());cam.stream=null;cam.track=null;}camVideo.srcObject=null;clearOverlay();}
-function videoRect(){const W=camMid.clientWidth,H=camMid.clientHeight,vw=camVideo.videoWidth||16,vh=camVideo.videoHeight||9;const s=Math.min(W/vw,H/vh);const dw=vw*s,dh=vh*s;return {x:(W-dw)/2,y:(H-dh)/2,w:dw,h:dh,s};}
+function videoRect(){const W=camMid.clientWidth,H=camMid.clientHeight,vw=camVideo.videoWidth||16,vh=camVideo.videoHeight||9;const s=Math.max(W/vw,H/vh);const dw=vw*s,dh=vh*s;return {x:(W-dw)/2,y:(H-dh)/2,w:dw,h:dh,s};}
 function layoutOverlay(){const r=videoRect();const dpr=Math.min(2,window.devicePixelRatio||1);camOverlay.style.left=r.x+"px";camOverlay.style.top=r.y+"px";camOverlay.style.width=r.w+"px";camOverlay.style.height=r.h+"px";camOverlay.width=Math.max(1,Math.round(r.w*dpr));camOverlay.height=Math.max(1,Math.round(r.h*dpr));}
 window.addEventListener("resize",()=>{if(cam.on)layoutOverlay();});
 // the camera area changes height when the Done row appears or the phone rotates — keep the outline glued to the video
@@ -1062,7 +1064,17 @@ async function camLoop(){
   }catch(e){}
   cam.loopTimer=setTimeout(camLoop,period);
 }
-async function takeStill(){
+/* The preview fills the screen (cover), so trim the still to the same centred shape — the photo = what you saw */
+async function trimToView(blob){
+  try{const W=camMid.clientWidth,H=camMid.clientHeight;if(!W||!H)return blob;const view=W/H;
+    const bm=await blobToBitmap(blob);const w=bmW(bm),h=bmH(bm);const a=w/h;
+    if(Math.abs(a-view)/view<0.02){if(bm.close)bm.close();return blob;}
+    let cw=w,ch=h;if(a>view)cw=Math.round(h*view);else ch=Math.round(w/view);
+    const c=makeCanvas(cw,ch);c.getContext("2d").drawImage(bm,(w-cw)/2,(h-ch)/2,cw,ch,0,0,cw,ch);if(bm.close)bm.close();
+    return await canvasToBlob(c,"image/jpeg",0.95);}catch(e){return blob;}
+}
+async function takeStill(){return trimToView(await takeRawStill());}
+async function takeRawStill(){
   if(settings.hires&&window.ImageCapture&&cam.track){
     try{const ic=new ImageCapture(cam.track);const blob=await Promise.race([ic.takePhoto(),sleep(2500).then(()=>{throw new Error("timeout");})]);if(blob&&blob.size>10000)return blob;}catch(e){}
   }
