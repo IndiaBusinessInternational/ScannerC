@@ -1,4 +1,4 @@
-# IBI ScannerC v2.5.2
+# IBI ScannerC v2.5.3
 
 Scan documents with your phone, the way Google Scan and Adobe Scan do — in the browser, with nothing uploaded.
 
@@ -36,6 +36,7 @@ Badge (`versionTag`), `ibi-build` meta, footer, `service-worker.js` `CACHE_VERSI
 
 ## Changelog
 
+- **v2.5.3 (11 Oct 2026)** — long words wrap only where they would overflow (break-word instead of anywhere, so buttons and switches keep whole words on phones).
 - **v2.5.2 (11 Oct 2026)** — phones edge to edge: no outer gutter, full-bleed flat boxes, 10px inner side padding, the page never wider than the screen.
 - **v2.5.1 (26 Sep 2026)** — inside an installed copy, Settings offers *Reinstall* with steps (an old copy restored from a previous phone opens with an address bar).
 - **v2.5.0 (26 Sep 2026)** — automatic Google Drive backup: each document is saved as a PDF in the “IBI ScannerC” Drive folder and updated after edits (Google Identity Services, `drive.file` scope, the IBI Documents OAuth client). Sign-in only on taps; backups run by themselves while the sign-in is valid; a *Back up now* banner otherwise. Cloud badge on each document. Service worker never caches Google traffic.
