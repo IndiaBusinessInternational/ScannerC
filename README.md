@@ -1,4 +1,4 @@
-# IBI ScannerC v2.8.2
+# IBI ScannerC v2.8.3
 
 Scan documents with your phone, the way Google Scan and Adobe Scan do — in the browser, with nothing uploaded.
 
@@ -36,6 +36,7 @@ Badge (`versionTag`), `ibi-build` meta, footer, `service-worker.js` `CACHE_VERSI
 
 ## Changelog
 
+- **v2.8.3 (18 Oct 2026)** — ID-card photos (front and back sides) also use Magic colour (CEO).
 - **v2.8.2 (18 Oct 2026)** — Magic colour is ALWAYS the filter for new scans (CEO: "always keep Magic Color as default"); the "Default filter for new scans" setting is removed. Any page can still be switched with Filters. ID-card sides stay on Auto (true skin tones).
 - **v2.8.1 (18 Oct 2026)** — Magic colour is the default filter for new scans (CEO). Every phone is switched over once; a default chosen later in Settings is kept. ID-card sides stay on Auto (true skin tones).
 - **v2.8.0 (18 Oct 2026)** — (1) **Book mode**: camera mode Book (and ⋮ › Split into two pages) turns an open book or diary into two straight pages — the spine is found as the darkest, smoothest column near the middle, each page's curved top and bottom edges are traced and straightened (bent text lines 2.0–2.4% of page height → 0.06–0.13%), and the spine shadow is lifted. (2) **Verified scan**: optional tamper-proof seal on PDFs — scan date, ID, SHA-256 fingerprint of the whole file and a QR code on every page; Settings › Verify a PDF says Genuine, Changed or No seal (one changed character or bytes added at the end are caught). The QR opens the Verify page.

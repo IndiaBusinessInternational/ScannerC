@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.8.2">
+<meta name="ibi-build" content="v2.8.3">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -428,7 +428,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.8.2</span>
+    <span class="version" id="versionTag">v2.8.3</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -512,7 +512,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.8.2</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.8.3</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -734,7 +734,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.8.2</b></div>
+      <div class="kv"><span>Version</span><b>v2.8.3</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -771,7 +771,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.8.2";
+const APP_VERSION="v2.8.3";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -848,7 +848,7 @@ const SET_KEY="ibi_scannerc_settings_v2";
 const DEFAULTS={theme:"dark",ts:1,filter:"enhance",auto:true,review:false,hires:true,fx:true,size:"a4",q:"balanced",lang:"eng",grid:false,helpSeen:false,installDismissed:0};
 let settings=Object.assign({},DEFAULTS);
 try{Object.assign(settings,JSON.parse(localStorage.getItem(SET_KEY)||"{}"));}catch(e){}
-/* v2.8.2 (CEO 18 Oct 2026: "always keep Magic Color as default"): every new scan opens in Magic colour. There is no default
+/* v2.8.2 (CEO 18 Oct 2026: "always keep Magic Color as default"): every new scan opens in Magic colour (ID-card sides too, v2.8.3). There is no default
    setting any more; any page can still be switched with the Filters button. */
 settings.filter="enhance";
 function saveSettings(){try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}}
@@ -1582,7 +1582,7 @@ async function handleCapturedBlob(blob,opts){
   if(!corners&&opts.liveQuad){corners=opts.liveQuad.map(p=>[p[0]*bw,p[1]*bh]);opts.review=true;}
   if(cam.mode==="id"){ // always confirm corners for ID sides — a card is small in the frame
     const c=await cropDialog(blob,corners,{okText:cam.idSides.length?"Done":"Next: back side"});if(c===null)return;
-    const page=await newPage(null,blob,{corners:c.corners,rot:0});page.filter="auto";await renderPage(page);cam.idSides.push(page.proc);
+    const page=await newPage(null,blob,{corners:c.corners,rot:0});page.filter="enhance";await renderPage(page);cam.idSides.push(page.proc);   /* v2.8.3: Magic colour for ID cards too (CEO) */
     if(cam.idSides.length<2){$("camTitle").textContent="ID card · back";camHint("Now turn the card over");toast("Front saved — now the back side");return;}
     const composed=await composeIdCard(cam.idSides);cam.idSides=[];$("camTitle").textContent="ID card · front";
     await commitPage(composed,null,{filter:"original"});return;
