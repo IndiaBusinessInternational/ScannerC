@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.7.0">
+<meta name="ibi-build" content="v2.8.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -277,6 +277,7 @@
   .edtools .filters{display:none}
   .edtools.fltOn .filters{display:flex}
   .preview .nav.zm{top:8px;right:8px;transform:none}
+  .vf{border-radius:12px;padding:12px 14px;display:grid;gap:4px;overflow-wrap:break-word}.vf.ok{background:rgba(34,224,138,.14);border:1px solid #22e08a}.vf.bad{background:rgba(255,80,80,.12);border:1px solid #ff6060}.vf.none{background:var(--chip);border:1px solid var(--border)}.vf b{font-size:calc(16px*var(--ts))}
   .qcchip{position:absolute;top:10px;left:10px;z-index:3;border:0;border-radius:999px;background:#f5a524;color:#1d1300;font-weight:700;font-size:calc(13px*var(--ts));padding:7px 12px;box-shadow:0 4px 14px rgba(0,0,0,.45);max-width:calc(100% - 80px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .camqc{position:absolute;left:8px;right:8px;top:8px;z-index:6;display:flex;align-items:center;gap:8px;background:rgba(245,165,36,.96);color:#1d1300;border-radius:14px;padding:8px 8px 8px 12px;font-size:calc(14px*var(--ts));font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}
   .camqc span{flex:1 1 auto;min-width:0}
@@ -421,12 +422,13 @@
   <symbol id="i-install" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3"/><path d="M10 18h4"/></symbol>
   <symbol id="i-id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2.5"/><path d="M14 10h5M14 14h5"/></symbol>
   <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><circle cx="15" cy="9" r="6"/><circle cx="12" cy="15" r="6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c3-1.5 7-1.5 10 1 3-2.5 7-2.5 10-1v14c-3-1.5-7-1.5-10 1-3-2.5-7-2.5-10-1z"/><path d="M12 6v14"/></symbol>
   <symbol id="i-zoom" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M8 11h6M11 8v6"/></symbol>
 </svg>
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.7.0</span>
+    <span class="version" id="versionTag">v2.8.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -510,7 +512,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.7.0</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.8.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -556,6 +558,7 @@
   <div class="bot">
     <div class="modes" id="camModes">
       <button data-mode="doc" class="on">Document</button>
+      <button data-mode="book">Book</button>
       <button data-mode="id">ID card</button>
       <button data-mode="photo">Photo</button>
       <button data-mode="qr">QR / Barcode</button>
@@ -628,6 +631,7 @@
       <div class="field" id="exQField"><label>Quality / file size</label>
         <div class="seg" id="exQ"><button data-v="small">Small</button><button data-v="balanced" class="on">Balanced</button><button data-v="high">High quality</button></div></div>
       <div class="swrow"><div class="lbl">Searchable PDF (OCR text layer)<small>Text becomes selectable and searchable. Takes a few seconds per page.</small></div><label class="tgl"><input type="checkbox" id="exOcr"><span></span></label></div>
+      <div class="swrow"><div class="lbl">Verified scan (tamper-proof seal)<small>Adds the scan date, an ID, a fingerprint and a QR code to each page. Anyone can check in ScannerC that the PDF was not changed afterwards.</small></div><label class="tgl"><input type="checkbox" id="exSeal"><span></span></label></div>
       <div class="swrow"><div class="lbl">Protect with a password<small>The reader must type it to open the PDF.</small></div><label class="tgl"><input type="checkbox" id="exPwOn"><span></span></label></div>
       <div class="field" id="exPwField" hidden><label for="exPw">PDF password</label><input class="inp" id="exPw" type="text" autocomplete="off" placeholder="Type a password"></div>
     </div>
@@ -679,6 +683,16 @@
   <div class="sfoot"><button class="btn primary" id="qrOpen" hidden>Open link</button><button class="btn" id="qrCopy"><svg><use href="#i-copy"/></svg>Copy</button><button class="btn" id="qrShare"><svg><use href="#i-share"/></svg>Share</button><button class="btn" id="qrAgain">Scan another</button></div>
 </div></div>
 
+<div class="overlay" id="ovVerify"><div class="sheet">
+  <div class="shead"><h3>Verify a PDF</h3><button class="x" data-close><svg><use href="#i-x"/></svg></button></div>
+  <div class="sbody">
+    <p id="vfIntro" style="margin-top:0">Check that a <b>Verified scan</b> PDF is exactly as it was made — nothing edited, added or removed. The check runs on this device; the file is not uploaded.</p>
+    <button class="btn primary wide" id="vfPick"><svg><use href="#i-pdf"/></svg>Choose the PDF to check</button>
+    <div id="vfResult" style="margin-top:14px"></div>
+  </div>
+</div></div>
+<input type="file" id="fileVerify" accept="application/pdf,.pdf" hidden>
+
 <div class="overlay" id="ovConfirm"><div class="sheet">
   <div class="shead"><h3 id="cfTitle">Confirm</h3><button class="x" data-close><svg><use href="#i-x"/></svg></button></div>
   <div class="sbody" id="cfBody"></div>
@@ -695,6 +709,7 @@
   <div class="shead"><h3>Settings</h3><button class="x" data-close><svg><use href="#i-x"/></svg></button></div>
   <div class="sbody">
     <div class="swrow" style="padding-top:0"><div class="lbl">Install app<small id="setInstallNote">Put ScannerC on your home screen: opens full screen, works offline, keeps your scans protected.</small></div><button class="btn sm primary" id="setInstall"><svg><use href="#i-install"/></svg><span id="setInstallTxt">Install app</span></button></div>
+    <div class="swrow"><div class="lbl">Verify a PDF<small>Check that a Verified scan PDF has not been changed since it was scanned.</small></div><button class="btn sm" id="setVerify"><svg><use href="#i-check"/></svg>Verify</button></div>
     <div class="card" style="margin-top:12px"><div class="card-body">
       <div class="swrow" style="padding-top:0;padding-bottom:0;border-bottom:0"><div class="lbl">Back up to Google Drive<small>Every document is saved as a PDF in the “IBI ScannerC” folder of your Google Drive and kept up to date when you edit it. ScannerC can only see the files it saves there.</small></div><label class="tgl"><input type="checkbox" id="setDrive"><span></span></label></div>
       <div id="drvBox" hidden style="margin-top:10px;border-top:1px solid var(--border-soft);padding-top:4px">
@@ -720,7 +735,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.7.0</b></div>
+      <div class="kv"><span>Version</span><b>v2.8.0</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -757,7 +772,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.7.0";
+const APP_VERSION="v2.8.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -799,6 +814,7 @@ const LIB={
   jsqr:"https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js",
   pdfjs:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
   pdfjsWorker:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+  qrgen:"https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js",
   cv:"https://docs.opencv.org/4.x/opencv.js"
 };
 
@@ -1269,6 +1285,74 @@ async function compactOriginal(page){
     page.orig=blob;page.w=c.width;page.h=c.height;page.compactSize=blob.size;return true;
   }catch(e){return false;}
 }
+/* =====================================================================
+   BOOK MODE (v2.8.0): an open book or diary in one photo becomes two straight pages.
+   1) find the spine: the column between 30% and 70% of the width that is darkest and smoothest from top to bottom
+      (the fold's shadow, or the blank gutter), with a mild preference for the centre;
+   2) flatten each page: trace its curved top and bottom paper edges and stretch every column so both edges become
+      straight lines — the curved lines of text near the spine straighten with them (boundary-based dewarping).
+===================================================================== */
+function bookGray(img){const d=img.data,n=img.width*img.height,g=new Float32Array(n);for(let i=0,p=0;p<n;i+=4,p++)g[p]=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;return g;}
+function findSpine(img){
+  const W=img.width,H=img.height,g=bookGray(img),y0=Math.round(H*0.1),y1=Math.round(H*0.9),mean=new Float32Array(W),sd=new Float32Array(W);
+  for(let x=0;x<W;x++){let a=0,b=0,n=0;for(let y=y0;y<y1;y+=2){const v=g[y*W+x];a+=v;b+=v*v;n++;}mean[x]=a/n;sd[x]=Math.sqrt(Math.max(0,b/n-mean[x]*mean[x]));}
+  const r=Math.max(2,Math.round(W/150));let best=-1,bs=1e9;
+  for(let x=Math.round(W*0.3);x<=Math.round(W*0.7);x++){let m=0,s2=0,n=0;for(let k=x-r;k<=x+r;k++){if(k<0||k>=W)continue;m+=mean[k];s2+=sd[k];n++;}
+    const sc=(m/n)*0.5+(s2/n)+Math.abs(x/W-0.5)*60;if(sc<bs){bs=sc;best=x;}}
+  return best>0?best:Math.round(W/2);
+}
+function sliceCols(img,x0,x1){const W=img.width,H=img.height,w=x1-x0,o=new ImageData(w,H);for(let y=0;y<H;y++)o.data.set(img.data.subarray((y*W+x0)*4,(y*W+x1)*4),y*w*4);return o;}
+function pageEdgeCurve(g,W,H,top){
+  /* per column: where the paper begins, coming in from the top (or bottom) edge = the first point that STAYS bright
+     (9 of the next 10 pixels at 82% of that column's own paper level — so the spine shadow does not fool it).
+     Lines of text lie inside the paper, so they are never taken for its edge. */
+  const step=Math.max(2,Math.round(W/160)),lim=Math.round(H*0.3),xs=[],ys=[],col=new Float32Array(H);
+  for(let x=1;x<W-1;x+=step){
+    for(let y=0;y<H;y++)col[y]=(g[y*W+x-1]+g[y*W+x]+g[y*W+x+1])/3;
+    const srt=Float32Array.from(col).sort(),thr=srt[Math.floor(H*0.9)]*0.82;let edge=-1;
+    for(let k=0;k<lim;k++){const y=top?k:H-1-k;let run=0;for(let j=0;j<10;j++){const yy=top?y+j:y-j;if(yy<0||yy>=H)break;if(col[yy]>=thr)run++;}if(run>=9){edge=y;break;}}
+    xs.push(x);ys.push(edge<0?(top?lim:H-1-lim):edge);}
+  if(xs.length<4)return null;
+  const n=ys.length,med=ys.map((v,i)=>{const w=ys.slice(Math.max(0,i-3),i+4).sort((a,b)=>a-b);return w[w.length>>1];});
+  const sm=med.map((v,i)=>{let a=0,c=0;for(let k=Math.max(0,i-2);k<=Math.min(n-1,i+2);k++){a+=med[k];c++;}return a/c;});
+  return x=>{const f=(x-xs[0])/step,i=Math.max(0,Math.min(n-2,Math.floor(f))),t=Math.max(0,Math.min(1,f-i));return sm[i]+(sm[i+1]-sm[i])*t;};
+}
+function flattenBookPage(img){
+  const W=img.width,H=img.height,g=bookGray(img),ct=pageEdgeCurve(g,W,H,true),cb=pageEdgeCurve(g,W,H,false);
+  const yt=x=>ct?Math.max(0,Math.min(H*0.35,ct(x))):0,yb=x=>cb?Math.min(H-1,Math.max(H*0.65,cb(x))):H-1;
+  let dev=0;for(let i=0;i<=20;i++){const x=i/20*(W-1);dev=Math.max(dev,Math.abs(yt(x)-yt(0)-(yt(W-1)-yt(0))*i/20),Math.abs(yb(x)-yb(0)-(yb(W-1)-yb(0))*i/20));}
+  if(!ct&&!cb)return img;
+  const hs=[];for(let i=0;i<=20;i++){const x=i/20*(W-1);hs.push(yb(x)-yt(x));}hs.sort((a,b)=>a-b);const OH=Math.max(8,Math.round(hs[hs.length>>1]));
+  const o=new ImageData(W,OH),d=img.data,od=o.data;
+  for(let x=0;x<W;x++){const t=yt(x),b=yb(x),k=(b-t)/OH;
+    for(let y=0;y<OH;y++){const sy=t+y*k,y0=Math.min(H-1,sy|0),y1=Math.min(H-1,y0+1),f=sy-y0,i0=(y0*W+x)*4,i1=(y1*W+x)*4,j=(y*W+x)*4;
+      od[j]=d[i0]+(d[i1]-d[i0])*f;od[j+1]=d[i0+1]+(d[i1+1]-d[i0+1])*f;od[j+2]=d[i0+2]+(d[i1+2]-d[i0+2])*f;od[j+3]=255;}}
+  o.bookDev=dev;return o;
+}
+function liftSpineShadow(img,spineOnRight){
+  /* the fold's shadow is plain shading: bring each column near the spine back to the page's own paper level */
+  const W=img.width,H=img.height,d=img.data,zone=Math.round(W*0.18),lvl=new Float32Array(W),tmp=new Float32Array(Math.ceil(H/3));
+  for(let x=0;x<W;x++){let n=0;for(let y=0;y<H;y+=3){const i=(y*W+x)*4;tmp[n++]=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;}const a=tmp.subarray(0,n).sort();lvl[x]=a[Math.floor(n*0.9)]||1;}
+  const outer=[];for(let x=0;x<W;x++){const fromSpine=spineOnRight?W-1-x:x;if(fromSpine>zone&&fromSpine<zone*3)outer.push(lvl[x]);}
+  outer.sort((a,b)=>a-b);const ref=outer.length?outer[outer.length>>1]:255;
+  for(let x=0;x<W;x++){const fromSpine=spineOnRight?W-1-x:x;if(fromSpine>zone)continue;const gain=Math.min(2.2,Math.max(1,ref/Math.max(1,lvl[x])));if(gain<1.02)continue;
+    for(let y=0;y<H;y++){const i=(y*W+x)*4;d[i]=Math.min(255,d[i]*gain);d[i+1]=Math.min(255,d[i+1]*gain);d[i+2]=Math.min(255,d[i+2]*gain);}}
+  return img;
+}
+async function splitBookPage(page){
+  const bm=await blobToBitmap(page.orig);let img=await bitmapToImageData(bm,3000);const sx=img.width/bmW(bm);if(bm.close)bm.close();
+  if(page.corners)img=await warpImageData(img,page.corners.map(p=>[p[0]*sx,p[1]*sx]));
+  if(img.height>img.width*1.05){toast("This looks like one page. For a book, hold the phone sideways so both pages sit side by side.",4500);return null;}
+  const sp=findSpine(img),halves=[liftSpineShadow(flattenBookPage(sliceCols(img,0,sp)),true),liftSpineShadow(flattenBookPage(sliceCols(img,sp,img.width)),false)];
+  const blobs=[];for(const h of halves){blobs.push(await canvasToBlob(imageDataToCanvas(h),"image/jpeg",0.92));}
+  /* the spread becomes the left page; the right page is inserted right after it */
+  const left=page;left.orig=blobs[0];left.w=halves[0].width;left.h=halves[0].height;left.corners=null;left.rot=0;left.compactSize=blobs[0].size;left.qcKey=null;
+  await renderPage(left);await Store.putPage(left);
+  const right=await newPage(page.docId,blobs[1],{filter:page.filter,bright:page.bright|0,contrast:page.contrast|0,sat:page.sat|0});right.compactSize=blobs[1].size;await renderPage(right);
+  const all=await Store.pagesOf(page.docId);const at=all.findIndex(x=>x.id===left.id);all.splice(at+1,0,right);
+  for(let i=0;i<all.length;i++){all[i].order=i;all[i].docId=page.docId;await Store.putPage(all[i]);}
+  await refreshDocMeta(page.docId);return {left,right,spine:sp/img.width,dev:[halves[0].bookDev||0,halves[1].bookDev||0]};
+}
 /* Quality guard (v2.7.0): like a careful operator, check each page right after it is taken — blur, glare, too dark, too small,
    cut off — and offer Retake at once. Metrics run on the cropped page BEFORE any filter (calibrated on a test set: sharp pages
    score 3.3-3.6, a normal phone shot ~1.5, clearly blurry text 0.5-0.85). */
@@ -1349,9 +1433,9 @@ const cam={stream:null,track:null,facing:"environment",mode:"doc",on:false,docId
 const camVideo=$("camVideo"),camOverlay=$("camOverlay"),camMid=$("camMid");
 function camHint(t){$("camHint").textContent=t;}
 function camSetMode(m){cam.mode=m;$$("#camModes button").forEach(b=>b.classList.toggle("on",b.dataset.mode===m));cam.idSides=[];cam.qrLast="";
-  $("idHint").style.display=m==="id"?"flex":"none";$("camAuto").hidden=!(m==="doc"||m==="id");$("camShot").hidden=(m==="qr");
-  $("camTitle").textContent=m==="doc"?"Document":m==="id"?"ID card · front":m==="photo"?"Photo":"QR / Barcode";
-  camHint(m==="doc"?"Fill the frame with the page; keep still":m==="id"?"Fit the card inside the frame":m==="photo"?"Tap the shutter":"Hold the code inside the frame");
+  $("idHint").style.display=m==="id"?"flex":"none";$("camAuto").hidden=!(m==="doc"||m==="id"||m==="book");$("camShot").hidden=(m==="qr");
+  $("camTitle").textContent=m==="doc"?"Document":m==="book"?"Book · two pages":m==="id"?"ID card · front":m==="photo"?"Photo":"QR / Barcode";
+  camHint(m==="doc"?"Fill the frame with the page; keep still":m==="book"?"Hold the phone sideways; fit both open pages in the frame":m==="id"?"Fit the card inside the frame":m==="photo"?"Tap the shutter":"Hold the code inside the frame");
   if(m==="qr")loadScript(LIB.jsqr).catch(()=>{});
   clearOverlay();
 }
@@ -1424,7 +1508,7 @@ async function camLoop(){
   const period=cam.mode==="qr"?250:130;
   try{
     if(cam.busy){/* wait */}
-    else if((cam.mode==="doc"||cam.mode==="id")&&CV&&camVideo.readyState>=2){
+    else if((cam.mode==="doc"||cam.mode==="book"||cam.mode==="id")&&CV&&camVideo.readyState>=2){
       const g=grabSmall(360);
       if(g){const r=detectQuad(g.img,{allowDark:cam.mode==="id"});const quad=r?r.corners:null;
         const sig=viewSig();cam.sig=sig;
@@ -1448,7 +1532,7 @@ async function camLoop(){
           // page out of view for ~1.5 s (hand turning the page, next sheet coming in) → ready for the next shot
           if(performance.now()-(cam.seenAt||0)>1200){cam.lastQuad=null;if(!cam.armed){cam.armed=true;cam.shotQuad=null;camHint("Ready for the next page");}}
           // no edges for a while: say what helps, and that the shutter still works
-          if(cam.armed&&cam.mode==="doc"){cam.noDocSince=cam.noDocSince||performance.now();
+          if(cam.armed&&(cam.mode==="doc"||cam.mode==="book")){cam.noDocSince=cam.noDocSince||performance.now();
             if(performance.now()-cam.noDocSince>4000)camHint(settings.auto?"Edges not clear — move a little closer, or tap the shutter and drag the corners":"Tap the shutter, then drag the corners");}
         }
       }
@@ -1509,6 +1593,7 @@ async function commitPage(blob,corners,extra){
   if(cam.retakeId){const old=await Store.getPage(cam.retakeId);if(old){const p=Object.assign(old,{orig:blob,corners,rot:0,bright:0,contrast:0},extra||{});const bm=await blobToBitmap(blob);p.w=bmW(bm);p.h=bmH(bm);if(bm.close)bm.close();await renderPage(p);await Store.putPage(p);await refreshDocMeta(doc.id);cam.retakeId=null;cam.focusId=p.id;cam.lastThumb=p.thumb;cam.count++;updateCamCount();finishSession(true);return;}}
   const page=await newPage(doc.id,blob,Object.assign({corners:corners||null},extra||{}));await renderPage(page);await appendPage(doc.id,page);
   cam.count++;cam.lastThumb=page.thumb;updateCamCount();vibrate(20);
+  if(cam.mode==="book"){camHint("Splitting into two pages…");try{const r=await splitBookPage(page);if(r){cam.count++;cam.lastThumb=r.right.thumb;updateCamCount();camHint("Two pages saved. Turn the page for the next spread, or Done.");}}catch(e){toast("Could not split the pages: "+e.message);}return;}
   if(cam.mode==="doc"&&$("camStage").classList.contains("show")){const iss=qcIssues(page);if(iss.length)showCamQc(page,iss);}
   if(cam.mode!=="doc")camHint("Saved. Tap the shutter for another, or Done.");
 }
@@ -1520,7 +1605,7 @@ function showCamQc(page,iss){_camQc={page,n:cam.count};$("camQcTxt").textContent
 $("camQcKeep").onclick=()=>{$("camQc").hidden=true;if(_camQc){_camQc.page.qcOk=true;Store.putPage(_camQc.page);}_camQc=null;};
 $("camQcRetake").onclick=async()=>{const q=_camQc;$("camQc").hidden=true;_camQc=null;if(!q)return;
   await Store.delPage(q.page.id);await refreshDocMeta(cam.docId);cam.count=Math.max(0,cam.count-1);
-  const left=await Store.pagesOf(cam.docId);cam.lastThumb=left.length?left[left.length-1].thumb:null;updateCamCount();if(cam.mode==="doc")cam.armed=true;camHint("Removed — take that page again");};
+  const left=await Store.pagesOf(cam.docId);cam.lastThumb=left.length?left[left.length-1].thumb:null;updateCamCount();if(cam.mode==="doc"||cam.mode==="book")cam.armed=true;camHint("Removed — take that page again");};
 async function finishSession(open){
   if(open)driveBackupRun({fromTap:true});   // the Done tap carries the gesture a sign-in needs
   stopStream();$("camStage").classList.remove("show");$("zoomRow").style.display="none";if(!openSheets.length&&!document.querySelector(".stage.show"))document.body.classList.remove("lock");
@@ -1906,6 +1991,7 @@ $("abAdd").onclick=addPageMenu;
 $("abShare").onclick=()=>openExport({docId:ed.doc.id});
 $("edMenu").onclick=()=>showMenu(ed.doc.name,[
   {icon:"i-crop",label:"Crop this page",run:()=>$("tCrop").click()},
+  {icon:"i-book",label:"Split into two pages (book)",run:async()=>{const p=curPage();if(!p)return;setBusy(true,"Splitting the book spread…");try{const r=await splitBookPage(p);if(r){ed.filterCache={};await openEditor(ed.doc.id);toast("Split into two pages");}}catch(e){toast("Could not split: "+e.message);}finally{setBusy(false);}}},
   {icon:"i-edit",label:"Rename",run:async()=>{const v=await promptDlg("Rename document",ed.doc.name);if(v){ed.doc.name=v;$("docName").value=v;await Store.putDoc(ed.doc);}}},
   {icon:"i-text",label:"Recognise text on all pages (OCR)",run:()=>openOcr(true)},
   {icon:"i-share",label:"Share / Export",run:()=>openExport({docId:ed.doc.id})},
@@ -1959,11 +2045,12 @@ async function openExport(o){
   ex.docId=o.docId;ex.doc=await Store.getDoc(o.docId);ex.pages=await Store.pagesOf(o.docId);ex.fromEditor=$("scrEdit").classList.contains("active");ex.last=null;
   if(!ex.pages.length)return toast("This document has no pages");
   $("exName").value=ex.doc.name;segInit("exFmt","pdf",updateExportUI);segInit("exLim","0",updateExportUI);$("exLimCustom").value="";segInit("exSize",settings.size);segInit("exQ",settings.q);segInit("exPages","all");
-  $("exOcr").checked=false;$("exPwOn").checked=false;$("exPw").value="";$("exPwField").hidden=true;$("exProg").hidden=true;$("exProgTxt").textContent="";
+  $("exOcr").checked=false;$("exSeal").checked=false;$("exPwOn").checked=false;$("exPw").value="";$("exPwField").hidden=true;$("exProg").hidden=true;$("exProgTxt").textContent="";
   $("exPagesField").hidden=!(ex.fromEditor&&ex.pages.length>1);
   updateExportUI();openSheet("ovExport");
 }
-$("exPwOn").onchange=()=>{$("exPwField").hidden=!$("exPwOn").checked;if($("exPwOn").checked)setTimeout(()=>$("exPw").focus(),50);};
+$("exPwOn").onchange=()=>{if($("exPwOn").checked&&$("exSeal").checked){$("exSeal").checked=false;toast("A verified scan cannot also have a password, so the seal was switched off");}$("exPwField").hidden=!$("exPwOn").checked;if($("exPwOn").checked)setTimeout(()=>$("exPw").focus(),50);};
+$("exSeal").onchange=()=>{if($("exSeal").checked&&$("exPwOn").checked){$("exPwOn").checked=false;$("exPwField").hidden=true;toast("A verified scan cannot also have a password, so the password was switched off");}};
 function exLimitBytes(){const v=segVal("exLim");if(!v||v==="0")return 0;const kb=v==="c"?+$("exLimCustom").value:+v;return kb>=20?Math.floor(kb*1000):0;}
 function updateExportUI(){const f=segVal("exFmt");$("exPdfOpts").hidden=f!=="pdf";$("exPrint").hidden=f!=="pdf";
   const lim=f==="pdf"||f==="jpg";$("exLimField").hidden=!lim;$("exLimCustomWrap").hidden=segVal("exLim")!=="c";
@@ -2004,9 +2091,39 @@ async function fitPlan(pages,budget,perFile,onProg){
   }finally{bms.forEach(b=>{if(b.close)b.close();});}
 }
 const LATIN=/^[\x20-\x7E -ÿ–—‘’“”€]+$/;
+/* =====================================================================
+   VERIFIED SCAN (v2.8.0): a whole-file tamper seal. The PDF is written with a placeholder of 64 zeros wherever the
+   fingerprint goes (page footers + document keywords); SHA-256 of the WHOLE file is then computed and written into those
+   places. To check, ScannerC puts the zeros back, recomputes and compares: any change anywhere — edited text, a swapped
+   picture, an added note, a re-save — gives a different fingerprint. (Content streams are left uncompressed so the
+   placeholder can be filled in place; the page pictures are JPEG as usual.)
+===================================================================== */
+const SEAL_ZERO="0".repeat(64),SEAL_TAG="IBISEAL1 ";
+function sealId(){const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=crypto.getRandomValues(new Uint8Array(8));let s="";for(let i=0;i<8;i++){s+=a[r[i]%a.length];if(i===3)s+="-";}return s;}
+function sealWhen(d){let h=d.getHours();const ap=h>=12?"PM":"AM";h=h%12||12;return `${d.getDate()} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]} ${d.getFullYear()}, ${h}:${String(d.getMinutes()).padStart(2,"0")} ${ap}`;}
+function latin1(u8){let s="";for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return s;}
+function sealSpots(str,hex){const out=[];let i=-1;while((i=str.indexOf(hex,i+1))>=0)out.push(i);return out;}
+async function sha256hex(u8){const h=new Uint8Array(await crypto.subtle.digest("SHA-256",u8));return Array.from(h,b=>b.toString(16).padStart(2,"0")).join("");}
+async function sealQrPng(text){await loadScript(LIB.qrgen);const q=qrcode(0,"M");q.addData(text);q.make();const n=q.getModuleCount(),m=4,px=6,c=makeCanvas((n+m*2)*px,(n+m*2)*px),x=c.getContext("2d");
+  x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.fillStyle="#000";for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))x.fillRect((k+m)*px,(r+m)*px,px,px);return c.toDataURL("image/png");}
+async function sealFinish(blob){
+  const u8=new Uint8Array(await blob.arrayBuffer()),str=latin1(u8),spots=sealSpots(str,SEAL_ZERO);
+  if(spots.length<2)throw new Error("seal placeholder missing");
+  const hex=(await sha256hex(u8)).toUpperCase();
+  for(const at of spots)for(let k=0;k<64;k++)u8[at+k]=hex.charCodeAt(k);
+  return {blob:new Blob([u8],{type:"application/pdf"}),hex};
+}
+/* check a PDF: "genuine" | "changed" | "none" */
+async function verifyPdfBytes(u8){
+  const str=latin1(u8),m=str.match(/IBISEAL1 ([0-9A-F]{64}) ([A-Z0-9]{4}-[A-Z0-9]{4}) (\S+) (\d+)/);
+  if(!m)return {state:"none"};
+  const hex=m[1],spots=sealSpots(str,hex),z=new Uint8Array(u8);for(const at of spots)for(let k=0;k<64;k++)z[at+k]=48;
+  const again=(await sha256hex(z)).toUpperCase();
+  return {state:again===hex?"genuine":"changed",id:m[2],at:m[3],pages:+m[4],hex};
+}
 async function buildPDF(pages,opt,onProg){
   await loadScript(LIB.jspdf);const {jsPDF}=window.jspdf;const q=opt.fit?{max:opt.fit.max,q:opt.fit.q}:(QUALITY[opt.q]||QUALITY.balanced);
-  const cfg={unit:"mm",compress:true};if(opt.password){cfg.encryption={userPassword:opt.password,ownerPassword:opt.password,userPermissions:["print","copy"]};}
+  const cfg={unit:"mm",compress:!opt.seal};if(opt.password){cfg.encryption={userPassword:opt.password,ownerPassword:opt.password,userPermissions:["print","copy"]};}
   let doc=null;
   for(let i=0;i<pages.length;i++){
     const p=pages[i];onProg&&onProg(i/pages.length,`Preparing page ${i+1} of ${pages.length}…`);
@@ -2014,13 +2131,22 @@ async function buildPDF(pages,opt,onProg){
     const c=await pageCanvas(p,q.max);if(opt.fit&&opt.fit.gray)grayCanvas(c);const land=c.width>c.height;
     let pw,ph;if(opt.size==="auto"){pw=c.width/200*25.4;ph=c.height/200*25.4;}else{const mm=PAGE_MM[opt.size]||PAGE_MM.a4;pw=land?mm[1]:mm[0];ph=land?mm[0]:mm[1];}
     if(!doc){doc=new jsPDF(Object.assign({orientation:land?"l":"p",format:[pw,ph]},cfg));}else doc.addPage([pw,ph],land?"l":"p");
-    const s=Math.min(pw/c.width,ph/c.height);const dw=c.width*s,dh=c.height*s,x=(pw-dw)/2,y=(ph-dh)/2;
+    const foot=opt.seal?16:0,s=Math.min(pw/c.width,(ph-foot)/c.height);const dw=c.width*s,dh=c.height*s,x=(pw-dw)/2,y=(ph-foot-dh)/2;
     doc.addImage(c.toDataURL("image/jpeg",q.q),"JPEG",x,y,dw,dh,undefined,"FAST");
+    if(opt.seal){const S=opt.seal,qs=12,fy=ph-foot+2;
+      doc.addImage(S.qr,"PNG",pw-6-qs,fy,qs,qs,"sealqr","FAST");
+      doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(20,90,60);doc.text("Verified scan · IBI ScannerC",6,fy+3.4);
+      doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.setTextColor(70,70,70);
+      doc.text(`Scanned ${S.when} · ID ${S.id} · page ${i+1} of ${pages.length} · check: open this PDF in ScannerC > Settings > Verify a PDF`,6,fy+7);
+      doc.setFont("courier","normal");doc.setFontSize(6);doc.text("Fingerprint SHA-256: "+SEAL_ZERO,6,fy+10.4);doc.setTextColor(0,0,0);}
     if(opt.ocr&&p.ocrWords&&p.ocrWords.length&&p.pw){const kx=dw/p.pw,ky=dh/p.ph;doc.setFont("helvetica","normal");
       for(const w of p.ocrWords){if(!LATIN.test(w.t))continue;const hmm=(w.y1-w.y0)*ky;if(hmm<=0)continue;const pt=clamp(hmm*72/25.4*0.9,3,72);doc.setFontSize(pt);
         let hs=1;try{const tw=doc.getTextWidth(w.t);if(tw>0)hs=clamp(((w.x1-w.x0)*kx)/tw,0.3,3);}catch(e){}
         try{doc.text(w.t,x+w.x0*kx,y+w.y1*ky-hmm*0.15,{renderingMode:"invisible",horizontalScale:hs});}catch(e){}}}
   }
+  if(opt.seal){doc.setProperties({title:opt.name||"Scan",subject:"Verified scan - IBI ScannerC",creator:"IBI ScannerC "+APP_VERSION,keywords:SEAL_TAG+SEAL_ZERO+" "+opt.seal.id+" "+opt.seal.iso+" "+pages.length});
+    try{doc.setCreationDate(opt.seal.at);}catch(e){}
+    onProg&&onProg(0.97,"Sealing…");const r=await sealFinish(doc.output("blob"));opt.seal.hex=r.hex;onProg&&onProg(1,"PDF ready");return r.blob;}
   doc.setProperties({title:opt.name||"Scan",subject:"Scanned with IBI ScannerC",creator:"IBI ScannerC "+APP_VERSION,keywords:"scan, IBI ScannerC"});
   onProg&&onProg(1,"PDF ready");return doc.output("blob");
 }
@@ -2032,7 +2158,7 @@ async function buildText(pages,onProg){let t=[];for(let i=0;i<pages.length;i++){
 /* Build whatever the sheet asks for → {files:[File], kind} */
 async function buildExport(){
   const fmt=segVal("exFmt");const pages=selectedPages();const name=safeName($("exName").value||ex.doc.name);
-  if(ex.last&&ex.last.key===JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,exLimitBytes(),pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]))return ex.last;
+  if(ex.last&&ex.last.key===JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exSeal").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,exLimitBytes(),pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]))return ex.last;
   const busy=b=>{$("exShare").disabled=$("exDownload").disabled=$("exPrint").disabled=b;};busy(true);
   try{
     let files=[],kind=fmt;
@@ -2041,20 +2167,22 @@ async function buildExport(){
     const tooBig=()=>{const m=`Cannot fit ${pages.length>1&&fmt==="pdf"?pages.length+" pages":"this page"} under ${Math.round(LIM/1000)} KB and keep the text readable. Try a larger limit${pages.length>1&&fmt==="pdf"?", or fewer pages (Current page only)":""}.`;toast(m,5000);$("exProgTxt").textContent=m;};
     if(fmt==="pdf"){const pw=$("exPwOn").checked?$("exPw").value.trim():"";if($("exPwOn").checked&&!pw){toast("Type a password or switch the password off");busy(false);return null;}
       const opt={size:segVal("exSize"),q:segVal("exQ"),ocr:$("exOcr").checked,password:pw,name};let blob=null;
-      if(LIM){let budget=LIM-2500-900*pages.length;
+      if($("exSeal").checked){const at=new Date();opt.seal={id:sealId(),at,iso:at.toISOString().slice(0,16)+"Z",when:sealWhen(at)};opt.seal.qr=await sealQrPng("https://scanner.indiabusinessinternational.online/#verify="+opt.seal.id);}
+      if(LIM){let budget=LIM-2500-900*pages.length-(opt.seal?4000*pages.length:0);
         for(let round=0;round<3;round++){fit=await fitPlan(pages,budget,false,exProgress);if(!fit){tooBig();return null;}
           blob=await buildPDF(pages,Object.assign({fit},opt),exProgress);if(blob.size<=LIM)break;budget-=Math.ceil((blob.size-LIM)*1.15)+1000;blob=null;}
         if(!blob){tooBig();return null;}}
       else blob=await buildPDF(pages,opt,exProgress);
-      files=[new File([blob],name+".pdf",{type:"application/pdf"})];}
+      files=[new File([blob],name+".pdf",{type:"application/pdf"})];if(opt.seal)ex.seal=opt.seal;else ex.seal=null;}
     else if(fmt==="txt"){const blob=await buildText(pages,exProgress);files=[new File([blob],name+".txt",{type:"text/plain"})];}
     else{if(LIM&&fmt==="jpg"){fit=await fitPlan(pages,LIM,true,exProgress);if(!fit){tooBig();return null;}}
       const blobs=await buildImages(pages,fmt,exProgress,fit);if(LIM&&blobs.some(b=>b.size>LIM)){tooBig();return null;}files=blobs.map((b,i)=>new File([b],name+(blobs.length>1?` p${i+1}`:"")+(fmt==="png"?".png":".jpg"),{type:b.type}));}
     const tot=files.reduce((a,f)=>a+f.size,0);
     if(LIM&&fit){const big=Math.max(...files.map(f=>f.size));exProgress(1,`Ready · ${files.length>1?"largest file ":""}${Math.ceil(big/1000)} KB ✓ under the ${Math.round(LIM/1000)} KB limit · ${fit.max} px, quality ${Math.round(fit.q*100)}%${fit.gray?", grey":""}`);}
     else exProgress(1,`Ready · ${fmtBytes(tot)}`);
+    if(fmt==="pdf"&&ex.seal)$("exProgTxt").textContent+=` · sealed, ID ${ex.seal.id}`;
     if(fmt==="pdf")ex.doc.lastPdfSize=files[0].size;
-    ex.last={key:JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,exLimitBytes(),pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]),files,kind,name};
+    ex.last={key:JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exSeal").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,exLimitBytes(),pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]),files,kind,name};
     return ex.last;
   }catch(e){toast("Export failed: "+e.message,4000);$("exProgTxt").textContent="Failed: "+e.message;return null;}
   finally{busy(false);}
@@ -2358,7 +2486,7 @@ $("installCopy").onclick=async()=>{try{await navigator.clipboard.writeText(APP_U
 try{matchMedia("(display-mode: standalone)").addEventListener("change",updateInstallUI);}catch(e){}
 updateInstallUI();
 /* router */
-window.addEventListener("hashchange",()=>{const m=location.hash.match(/^#\/doc\/([A-Za-z0-9]+)/);if(m){if(!ed.doc||ed.doc.id!==m[1])openEditor(m[1]);}else if(!$("scrLib").classList.contains("active"))showLibrary();});
+window.addEventListener("hashchange",()=>{const vm=location.hash.match(/^#verify=?([A-Z0-9-]*)/);if(vm){openVerify(vm[1]);history.replaceState(null,"","#/");return;}const m=location.hash.match(/^#\/doc\/([A-Za-z0-9]+)/);if(m){if(!ed.doc||ed.doc.id!==m[1])openEditor(m[1]);}else if(!$("scrLib").classList.contains("active"))showLibrary();});
 /* service worker */
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("service-worker.js").then(reg=>{reg.addEventListener("updatefound",()=>{const nw=reg.installing;nw&&nw.addEventListener("statechange",()=>{if(nw.state==="installed"&&navigator.serviceWorker.controller)toast("A new version is ready — reopen the app to use it",4000);});});}).catch(()=>{});});}
 /* init */
@@ -2373,11 +2501,22 @@ async function compactExisting(){
     settings.compacted=true;saveSettings();if(n)toast(`Storage tidied: ${n} page${n>1?"s":""} now take less space`);
   }catch(e){}
 }
+function openVerify(id){$("vfResult").innerHTML=id?`<div class="muted">This QR belongs to scan <b>${escapeHtml(id)}</b>. Choose the PDF you received to check it.</div>`:"";openSheet("ovVerify");}
+$("setVerify").onclick=()=>{closeSheet("ovSettings");openVerify();};
+$("vfPick").onclick=()=>$("fileVerify").click();
+$("fileVerify").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;const box=$("vfResult");box.innerHTML='<div class="muted">Checking…</div>';
+  try{const r=await verifyPdfBytes(new Uint8Array(await f.arrayBuffer()));
+    const when=r.at?sealWhen(new Date(r.at)):"";
+    box.innerHTML=r.state==="genuine"?`<div class="vf ok"><b>✓ Genuine — unchanged since it was scanned</b><div>${escapeHtml(f.name)}</div><div>Scanned ${when} · ${r.pages} page${r.pages>1?"s":""} · ID ${r.id}</div><div class="mono small">${r.hex.slice(0,16)}…</div></div>`
+      :r.state==="changed"?`<div class="vf bad"><b>✗ Changed after scanning</b><div>${escapeHtml(f.name)} is not the file that was sealed (scan ID ${r.id}, ${when}). Ask the sender for the original.</div></div>`
+      :`<div class="vf none"><b>No seal found</b><div>This PDF was not made as a ScannerC Verified scan, so it cannot be checked.</div></div>`;}
+  catch(err){box.innerHTML=`<div class="vf bad"><b>Could not read this file</b><div>${escapeHtml(err.message)}</div></div>`;}});
 (async function init(){
   try{await db();}catch(e){toast("Storage is not available in this browser (private mode?). Scans cannot be saved.",6000);}
   protectStorage();
-  const m=location.hash.match(/^#\/doc\/([A-Za-z0-9]+)/);
+  const m=location.hash.match(/^#\/doc\/([A-Za-z0-9]+)/),vm=location.hash.match(/^#verify=?([A-Z0-9-]*)/);
   if(m)await openEditor(m[1]);else await showLibrary();
+  if(vm){openVerify(vm[1]);history.replaceState(null,"","#/");}
   await intakeSharedFiles();
   if(!settings.helpSeen){settings.helpSeen=true;saveSettings();openSheet("ovHelp");}
   setTimeout(compactExisting,4000);
