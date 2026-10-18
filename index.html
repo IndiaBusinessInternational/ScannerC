@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.6.0">
+<meta name="ibi-build" content="v2.6.1">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -387,7 +387,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.6.0</span>
+    <span class="version" id="versionTag">v2.6.1</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -466,7 +466,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.6.0</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.6.1</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -659,7 +659,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.6.0</b></div>
+      <div class="kv"><span>Version</span><b>v2.6.1</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -696,7 +696,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.6.0";
+const APP_VERSION="v2.6.1";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -1019,7 +1019,8 @@ function orderCorners(pts){ // -> TL,TR,BR,BL
    imageData: a small frame (≤ ~480 px). Returns {corners:[TL,TR,BR,BL], area, score} or null.
    Two scales are tried: shrinking averages out fine surface grain (cloth, textured laminate). */
 let DQ_ALLOW_DARK=false;
-function detectQuad(imageData,opts){
+function detectQuad(imageData,opts){return pickPage(detectQuadAll(imageData,opts));}
+function detectQuadAll(imageData,opts){
   DQ_ALLOW_DARK=!!(opts&&opts.allowDark);const all=[];detectQuadCore(imageData,all);
   const top=all.reduce((m,c)=>Math.max(m,c.score),0);
   if(top<0.85&&Math.max(imageData.width,imageData.height)>200){
@@ -1028,7 +1029,7 @@ function detectQuad(imageData,opts){
     const small=[];detectQuadCore(x.getImageData(0,0,c1.width,c1.height),small);
     small.forEach(c=>{c.corners=c.corners.map(p=>[p[0]*imageData.width/c1.width,p[1]*imageData.height/c1.height]);c.via+="@small";all.push(c);});
   }
-  return pickPage(all);
+  return all;
 }
 /* Among the plausible outlines, a text block or a photo INSIDE the page can score almost as well as the page.
    Like commercial scanners, take the LARGEST outline that is nearly as well supported as the best one. */
@@ -1139,20 +1140,51 @@ function scoreQuad(q,edge,g,W,H,minSide,density){
   // inside clearly DARKER all round and small = a block of print on the page, not the paper (dark cards/envelopes: large, or ID mode)
   if(neg>=Math.max(2,measured.length-1)&&af<0.4&&!DQ_ALLOW_DARK)return null;
   const contrast=Math.min(1,measured.reduce((a,v)=>a+Math.abs(v),0)/measured.length/20);
-  return {corners:q,area:af,score:support*0.55+Math.min(1,af/0.5)*0.25+contrast*0.2};
+  return {corners:q,area:af,score:support*0.55+Math.min(1,af/0.5)*0.25+contrast*0.2,darker:neg>pos};
 }
 /* Detect on a full bitmap/canvas: scales down, detects, scales corners back up. */
 async function detectOnBitmap(bm,opts){
   try{await loadCV();}catch(e){return null;}
   const w=bmW(bm),h=bmH(bm);
-  // a still is not time-critical: try a second size before giving up (fine surface grain averages out when smaller)
+  // a still is not time-critical: detect at two sizes and choose among ALL outlines from both. A coloured band or a ruled
+  // line can break the page border at one size but not the other (v2.6.1: the 480 px pass alone cropped a letter to the
+  // part below its header band, while 360 px found the whole sheet).
+  const all=[];
   for(const size of [480,360]){
     const s=Math.min(1,size/Math.max(w,h));const c=makeCanvas(Math.round(w*s),Math.round(h*s));const ctx=c.getContext("2d",{willReadFrequently:true});
     ctx.drawImage(bm,0,0,c.width,c.height);
-    const r=detectQuad(ctx.getImageData(0,0,c.width,c.height),opts);
-    if(r)return {corners:r.corners.map(p=>[p[0]/s,p[1]/s]),area:r.area};
+    detectQuadAll(ctx.getImageData(0,0,c.width,c.height),opts).forEach(r=>{r.corners=r.corners.map(p=>[p[0]/s,p[1]/s]);all.push(r);});
   }
-  return null;
+  const r=pickPage(all);
+  return r?{corners:r.corners,area:r.area,darker:!!r.darker}:null;
+}
+/* Imports only (a pre-cropped scan, a forwarded document photo, a screenshot): when the picture IS the page, keep the whole
+   image instead of cropping to a block inside it (its text, a table, a photo, a colour chart) or asking for corners.
+   The page fills the frame when the border strips look like paper (bright, near-neutral) on 3+ sides. Then an outline the
+   detector found is page CONTENT when it is darker just inside its sides than just outside (a real page is lighter than the
+   table at its edge) and it holds paper or has print around it. A page photographed on a table keeps its crop, and so does
+   a dark card on a plain table (no paper inside, nothing printed outside). With no outline at all, the whole image is kept
+   only when print reaches near the edges. */
+function importWholePage(bm,det){
+  const w=bmW(bm),h=bmH(bm),s=Math.min(1,360/Math.max(w,h)),W=Math.max(16,Math.round(w*s)),H=Math.max(16,Math.round(h*s)),N=W*H;
+  const c=makeCanvas(W,H),x=c.getContext("2d",{willReadFrequently:true});x.drawImage(bm,0,0,W,H);const d=x.getImageData(0,0,W,H).data;
+  const L=new Uint8Array(N),C=new Uint8Array(N),hist=new Uint32Array(256);
+  for(let i=0,p=0;p<N;i+=4,p++){const r=d[i],g=d[i+1],b=d[i+2];L[p]=(r*77+g*150+b*29)>>8;C[p]=Math.max(r,g,b)-Math.min(r,g,b);hist[L[p]]++;}
+  let acc=0,p95=255;for(let v=255;v>=0;v--){acc+=hist[v];if(acc>=N*0.05){p95=v;break;}}
+  const pmin=Math.max(100,p95*0.65),paper=p=>L[p]>=pmin&&C[p]<=Math.max(40,L[p]*0.3),ink=p=>L[p]<p95*0.6;
+  const bw=Math.max(2,Math.round(Math.min(W,H)*0.03)),zw=Math.round(W*0.15),zh=Math.round(H*0.15);
+  const side=(x0,y0,x1,y1)=>{let n=0,k=0;for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){n++;if(paper(y*W+x))k++;}return n?k/n:0;};
+  const sides=[side(0,0,W,bw),side(0,H-bw,W,H),side(0,0,bw,H),side(W-bw,0,W,H)].filter(f=>f>=0.6).length;
+  if(sides<3)return false;
+  if(!det){ /* no outline at all: whole page only when print reaches near the edges (a dark object on a bare table has none) */
+    let n=0,k=0;for(let y=bw;y<H-bw;y++)for(let x=bw;x<W-bw;x++){if(x>=zw&&x<W-zw&&y>=zh&&y<H-zh)continue;n++;if(ink(y*W+x))k++;}
+    return n>0&&k/n>=0.004;}
+  if(!det.darker)return false;
+  const q=det.corners.map(p=>[p[0]*s,p[1]*s]);
+  const inside=(x,y)=>{for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];if((b[0]-a[0])*(y-a[1])-(b[1]-a[1])*(x-a[0])<0)return false;}return true;};
+  let ni=0,pi=0,no=0,ko=0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const p=y*W+x;if(inside(x+0.5,y+0.5)){ni++;if(paper(p))pi++;}else{no++;if(ink(p))ko++;}}
+  return ni>0&&(pi/ni>=0.25||(no>0&&ko/no>=0.004));
 }
 
 /* =====================================================================
@@ -1349,9 +1381,11 @@ async function handleCapturedBlob(blob,opts){
   if(cam.mode==="photo"&&opts.fromCamera){await commitPage(blob,null,{filter:"original"});return;}
   const bm=await blobToBitmap(blob);
   let det=null;try{det=await detectOnBitmap(bm,{allowDark:cam.mode==="id"});}catch(e){}
+  /* imports: a picture that IS the page keeps the whole image (no crop to a block inside it, no corner screen) */
+  let whole=false;if(!opts.fromCamera&&cam.mode!=="id"){try{whole=importWholePage(bm,det);}catch(e){}}
   const bw=bmW(bm),bh=bmH(bm);
   if(bm.close)bm.close();
-  let corners=det&&det.area>=0.12?det.corners:null;
+  let corners=!whole&&det&&det.area>=0.12?det.corners:null;
   // the still missed the edges but the live view had them a moment ago: reuse that outline and let the user confirm it
   if(!corners&&opts.liveQuad){corners=opts.liveQuad.map(p=>[p[0]*bw,p[1]*bh]);opts.review=true;}
   if(cam.mode==="id"){ // always confirm corners for ID sides — a card is small in the frame
@@ -1361,7 +1395,7 @@ async function handleCapturedBlob(blob,opts){
     const composed=await composeIdCard(cam.idSides);cam.idSides=[];$("camTitle").textContent="ID card · front";
     await commitPage(composed,null,{filter:"original"});return;
   }
-  if(settings.review||!corners||opts.review||(opts.fromCamera&&!settings.auto)){const c=await cropDialog(blob,corners,{okText:"Done"});if(c===null)return;await commitPage(c.blob,c.corners,{});}
+  if(settings.review||(!corners&&!whole)||opts.review||(opts.fromCamera&&!settings.auto)){const c=await cropDialog(blob,corners,{okText:"Done"});if(c===null)return;await commitPage(c.blob,c.corners,{});}
   else await commitPage(blob,corners,{});
 }
 async function commitPage(blob,corners,extra){
@@ -1588,7 +1622,7 @@ $("edMenu").onclick=()=>showMenu(ed.doc.name,[
   {icon:"i-share",label:"Share / Export",run:()=>openExport({docId:ed.doc.id})},
   {icon:"i-crop",label:"Re-detect edges on all pages",run:redetectAll},
   {icon:"i-trash",label:"Delete document",danger:true,run:async()=>{const ok=await confirmDlg("Delete document",`Delete <b>${escapeHtml(ed.doc.name)}</b> and its ${ed.pages.length} page(s)?`,"Delete");if(!ok)return;await Store.delDoc(ed.doc.id);toast("Deleted");showLibrary();}}]);
-async function redetectAll(){setBusy(true,"Detecting edges…");try{for(const p of ed.pages){const bm=await blobToBitmap(p.orig);const d=await detectOnBitmap(bm);if(bm.close)bm.close();if(d&&d.area>=0.12){p.corners=d.corners;await renderPage(p);await Store.putPage(p);}}await refreshDocMeta(ed.doc.id);ed.filterCache={};renderEditor();toast("Done");}catch(e){toast(e.message);}finally{setBusy(false);}}
+async function redetectAll(){setBusy(true,"Detecting edges…");try{for(const p of ed.pages){const bm=await blobToBitmap(p.orig);const d=await detectOnBitmap(bm);const whole=importWholePage(bm,d);if(bm.close)bm.close();if(whole&&p.corners){p.corners=null;await renderPage(p);await Store.putPage(p);}else if(!whole&&d&&d.area>=0.12){p.corners=d.corners;await renderPage(p);await Store.putPage(p);}}await refreshDocMeta(ed.doc.id);ed.filterCache={};renderEditor();toast("Done");}catch(e){toast(e.message);}finally{setBusy(false);}}
 
 /* =====================================================================
    OCR (Tesseract.js, on-device)
