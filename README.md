@@ -1,4 +1,4 @@
-# IBI ScannerC v2.6.1
+# IBI ScannerC v2.6.2
 
 Scan documents with your phone, the way Google Scan and Adobe Scan do — in the browser, with nothing uploaded.
 
@@ -36,6 +36,7 @@ Badge (`versionTag`), `ibi-build` meta, footer, `service-worker.js` `CACHE_VERSI
 
 ## Changelog
 
+- **v2.6.2 (18 Oct 2026)** — Crop is always on screen: the filters and the tool row (Crop, Rotate, Adjust, Text, Retake, Delete) are pinned just above Add page / Share on every screen size, and the page preview is sized to fit above them (before, the tools sat below a full-height preview, off-screen on phones). The ⋮ menu also has Crop this page. Corner dragging is smooth: the outline is moved, not rebuilt, once per frame; a touch grabs the nearest handle in finger reach; side handles move their edge straight in or out; the outline can never fold (the handle stops at the limit); the magnifier stays in a top corner away from the finger and shows both edges. Adjust replaces the filter strip and its sliders sit on one line, so the page stays in view.
 - **v2.6.1 (18 Oct 2026)** — imported pictures that ARE the page (pre-cropped scans, forwarded document photos) keep the whole page instead of being cropped to a block inside it (text, table, photo, colour chart) or opening the corner screen; stills are detected at two sizes and the best outline from both is used (a header band no longer cuts the page short). Detection regression set: 14/14 (was 4/12).
 - **v2.6.0 (18 Oct 2026)** — true-colour scanning engine. The paper is found by its tint and brightness only, so coloured bands, photos and pale boxes keep their real colour; light and colour cast are evened out in linear light; camera glare is removed so ink is black and colours regain their real strength; paper is cleaned to white only where it is neutral; text is sharpened. New filters Magic colour, Photo and Whiteboard; B&W keeps white lettering on coloured bands; Colour slider in Adjust; higher PDF image quality; edge to edge on every screen size. Measured on a colour test sheet: average colour error (ΔE) 25 → 4–7.
 - **v2.5.3 (11 Oct 2026)** — long words wrap only where they would overflow (break-word instead of anywhere, so buttons and switches keep whole words on phones).

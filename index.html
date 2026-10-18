@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.6.1">
+<meta name="ibi-build" content="v2.6.2">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -39,7 +39,7 @@
 <style>
   :root{
     --accent:#00c5ff;--accent-dim:rgba(0,197,255,.14);--accent-line:rgba(0,197,255,.32);
-    --header-bg:#000000;--radius:14px;--maxw:none;--ts:1;
+    --header-bg:#000000;--radius:14px;--maxw:none;--abh:calc(69px + var(--sab));--ts:1;
     --font:'Roboto',system-ui,-apple-system,Segoe UI,Arial,sans-serif;
     --mono:'Roboto Mono','Roboto',ui-monospace,monospace;
     --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
@@ -226,6 +226,10 @@
   #cropSvg circle.hit{fill:transparent;r:26;cursor:grab}
   #cropSvg circle.m{fill:var(--accent);stroke:#fff;stroke-width:2;r:8}
   #cropSvg circle.mhit{fill:transparent;r:22;cursor:grab}
+  #cropMid{touch-action:none}
+  #cropSvg{pointer-events:none}
+  #cropSvg circle.h.act{r:16;fill:var(--accent)}
+  #cropSvg circle.m.act{r:11;fill:#fff;stroke:var(--accent)}
   #loupe{position:absolute;width:130px;height:130px;border-radius:50%;border:3px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.6);display:none;pointer-events:none;background:#000;overflow:hidden;z-index:5}
   #loupe canvas{width:100%;height:100%;display:block}
   .cropbtns{display:flex;justify-content:space-between;gap:6px;align-items:center;flex-wrap:wrap}
@@ -257,7 +261,16 @@
   .toolbar .tool{min-width:0;padding:8px 2px}
   .toolbar::-webkit-scrollbar{display:none}
   .adj{display:none;padding:8px 4px 0}
+  /* v2.6.2 (CEO 18 Oct 2026: "there is no option to crop"): Crop was in the tool row BELOW the full-height preview, so on a
+     phone it was off-screen. Like Adobe Scan / Microsoft Lens / CamScanner, the filters and tools (Crop first) now stay
+     pinned on screen just above Add page / Share, and the page preview is sized to fit above them. */
+  .edtools{position:sticky;bottom:var(--abh);z-index:30;background:var(--bg);border-top:1px solid var(--border);box-shadow:0 -6px 18px rgba(0,0,0,.25)}
+  .preview img{max-height:max(240px,calc(100dvh - var(--abh) - 356px))}
   .adj.show{display:block}
+  .edtools.adjOn .filters{display:none}   /* Adjust takes the filter strip's place, so the page stays in view */
+  .adj .row{flex-wrap:nowrap;align-items:center}
+  .adj .row input[type=range]{flex:1 1 auto;width:auto;min-width:0}
+  .adj .row output{min-width:34px;text-align:right}
   .adj .row{gap:10px;margin-bottom:6px}
   .adj label{min-width:84px;font-size:calc(13px*var(--ts));color:var(--muted)}
   .adj output{font-family:var(--mono);min-width:38px;text-align:right;font-size:calc(13px*var(--ts))}
@@ -387,7 +400,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.6.1</span>
+    <span class="version" id="versionTag">v2.6.2</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -439,6 +452,7 @@
           <div class="pgi" id="pvIdx">1 / 1</div>
           <div class="busy" id="pvBusy"><div class="spinner"></div><div id="pvBusyTxt">Processing…</div></div>
         </div>
+        <div class="edtools" id="edTools">
         <div class="filters" id="filters"></div>
         <div class="adj" id="adj">
           <div class="row"><label for="adjB">Brightness</label><input type="range" id="adjB" min="-100" max="100" value="0"><output id="adjBo">0</output></div>
@@ -447,12 +461,13 @@
           <div class="row" style="justify-content:flex-end"><button class="btn sm" id="adjReset">Reset</button><button class="btn sm primary" id="adjApply">Apply</button></div>
         </div>
         <div class="toolbar">
-          <button class="tool" id="tCrop" title="Adjust the corners"><svg><use href="#i-crop"/></svg>Crop</button>
+          <button class="tool" id="tCrop" title="Crop: drag the corners and sides"><svg><use href="#i-crop"/></svg>Crop</button>
           <button class="tool" id="tRot" title="Rotate 90°"><svg><use href="#i-rot"/></svg>Rotate</button>
           <button class="tool" id="tAdj" title="Brightness, contrast and colour"><svg><use href="#i-adj"/></svg>Adjust</button>
           <button class="tool" id="tOcr" title="Recognise text (OCR)"><svg><use href="#i-text"/></svg>Text</button>
           <button class="tool" id="tRetake" title="Re-scan this page with the camera"><svg><use href="#i-retake"/></svg>Retake</button>
           <button class="tool" id="tDel" title="Delete this page"><svg><use href="#i-trash"/></svg>Delete</button>
+        </div>
         </div>
       </div>
       <div class="card">
@@ -466,7 +481,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.6.1</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.6.2</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -659,7 +674,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.6.1</b></div>
+      <div class="kv"><span>Version</span><b>v2.6.2</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -696,7 +711,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.6.1";
+const APP_VERSION="v2.6.2";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -1450,7 +1465,7 @@ function fullCorners(w,h){return [[0,0],[w,0],[w,h],[0,h]];}
 function cropDialog(blob,corners,opts){
   opts=opts||{};
   return new Promise(async res=>{
-    crop.resolve=res;crop.blob=blob;
+    crop.resolve=res;crop.blob=blob;crop.drag=null;
     const bm=await blobToBitmap(blob);crop.w=bmW(bm);crop.h=bmH(bm);
     // a display-sized copy for the loupe (≤1800px)
     const s=Math.min(1,1800/Math.max(crop.w,crop.h));crop.src=makeCanvas(Math.round(crop.w*s),Math.round(crop.h*s));crop.src.getContext("2d").drawImage(bm,0,0,crop.src.width,crop.src.height);crop.srcScale=s;
@@ -1467,34 +1482,74 @@ function layoutCrop(){
   cropWrap.style.width=Math.round(crop.w*s)+"px";cropWrap.style.height=Math.round(crop.h*s)+"px";cropImg.style.width="100%";cropImg.style.height="100%";
   cropSvg.setAttribute("viewBox",`0 0 ${Math.round(crop.w*s)} ${Math.round(crop.h*s)}`);drawCrop();
 }
-function drawCrop(){
-  const s=crop.scale,P=crop.pts.map(p=>[p[0]*s,p[1]*s]);
-  let h=`<polygon points="${P.map(p=>p.join(",")).join(" ")}"/>`;
-  for(let i=0;i<4;i++){const a=P[i],b=P[(i+1)%4];const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;h+=`<circle class="m" cx="${mx}" cy="${my}"/><circle class="mhit" data-m="${i}" cx="${mx}" cy="${my}"/>`;}
-  for(let i=0;i<4;i++){h+=`<circle class="h" cx="${P[i][0]}" cy="${P[i][1]}"/><circle class="hit" data-c="${i}" cx="${P[i][0]}" cy="${P[i][1]}"/>`;}
-  cropSvg.innerHTML=h;
+/* v2.6.2 smooth corners (CEO 18 Oct 2026: "it moves here and there, make it smooth"). The outline is built ONCE and only its
+   coordinates change (it used to be rebuilt on every finger move); moves are applied once per screen frame; a touch grabs
+   the NEAREST handle within finger reach (corners win over sides); a side handle moves its edge straight in or out only;
+   the outline can never fold over itself (the handle just stops); the magnifier stays put in a top corner away from the
+   finger and shows the two edges, so they can be lined up with the paper's edge. */
+let cropEls=null;
+function cropBuild(){
+  const NS="http://www.w3.org/2000/svg",mk=c=>{const e=document.createElementNS(NS,c[0]);if(c[1])e.setAttribute("class",c[1]);cropSvg.appendChild(e);return e;};
+  cropSvg.textContent="";cropEls={poly:mk(["polygon"]),m:[0,1,2,3].map(()=>mk(["circle","m"])),h:[0,1,2,3].map(()=>mk(["circle","h"]))};
 }
-function cropPt(e){const r=cropWrap.getBoundingClientRect();return [(e.clientX-r.left)/crop.scale,(e.clientY-r.top)/crop.scale];}
-cropSvg.addEventListener("pointerdown",e=>{
-  const t=e.target;if(!(t.dataset.c!=null||t.dataset.m!=null))return;
-  const p=cropPt(e);crop.drag={c:t.dataset.c!=null?+t.dataset.c:null,m:t.dataset.m!=null?+t.dataset.m:null,start:p,pts:crop.pts.map(q=>q.slice())};
-  cropSvg.setPointerCapture(e.pointerId);e.preventDefault();if(crop.drag.c!=null)showLoupe(crop.pts[crop.drag.c]);
+function drawCrop(){
+  if(!cropEls||cropEls.poly.parentNode!==cropSvg)cropBuild();
+  const s=crop.scale,P=crop.pts.map(p=>[p[0]*s,p[1]*s]),g=crop.drag;
+  cropEls.poly.setAttribute("points",P.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" "));
+  for(let i=0;i<4;i++){const a=P[i],b=P[(i+1)%4];
+    cropEls.m[i].setAttribute("cx",((a[0]+b[0])/2).toFixed(1));cropEls.m[i].setAttribute("cy",((a[1]+b[1])/2).toFixed(1));
+    cropEls.h[i].setAttribute("cx",a[0].toFixed(1));cropEls.h[i].setAttribute("cy",a[1].toFixed(1));
+    cropEls.h[i].classList.toggle("act",!!g&&g.c===i);cropEls.m[i].classList.toggle("act",!!g&&g.m===i);}
+}
+function cropConvex(q){
+  let sg=0;
+  for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4],c=q[(i+2)%4];const z=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);
+    if(Math.abs(z)<1e-6)return false;const t=Math.sign(z);if(!sg)sg=t;else if(t!==sg)return false;
+    if(Math.hypot(b[0]-a[0],b[1]-a[1])*crop.scale<24)return false;}
+  return true;
+}
+const cropMidEl=$("cropMid");
+cropMidEl.addEventListener("pointerdown",e=>{
+  if(e.button>0||!crop.pts||crop.drag)return;
+  const r=cropWrap.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,s=crop.scale,P=crop.pts.map(p=>[p[0]*s,p[1]*s]);
+  let best=null,bs=1e9;
+  for(let i=0;i<4;i++){const d=Math.hypot(P[i][0]-x,P[i][1]-y);if(d<=48&&d*0.8<bs){bs=d*0.8;best={c:i,m:null};}
+    const a=P[i],b=P[(i+1)%4],dm=Math.hypot((a[0]+b[0])/2-x,(a[1]+b[1])/2-y);if(dm<=40&&dm<bs){bs=dm;best={c:null,m:i};}}
+  if(!best)return;
+  loupe.dataset.side="";
+  crop.drag={c:best.c,m:best.m,sx:e.clientX,sy:e.clientY,pts:crop.pts.map(q=>q.slice()),id:e.pointerId,last:null,raf:0};
+  try{cropMidEl.setPointerCapture(e.pointerId);}catch(_){}
+  e.preventDefault();drawCrop();if(best.c!=null)showLoupe(crop.pts[best.c]);
 });
-cropSvg.addEventListener("pointermove",e=>{
-  if(!crop.drag)return;const p=cropPt(e);const dx=p[0]-crop.drag.start[0],dy=p[1]-crop.drag.start[1];
-  if(crop.drag.c!=null){const i=crop.drag.c;crop.pts[i]=[clamp(crop.drag.pts[i][0]+dx,0,crop.w),clamp(crop.drag.pts[i][1]+dy,0,crop.h)];showLoupe(crop.pts[i]);}
-  else{const i=crop.drag.m,j=(i+1)%4;[i,j].forEach(k=>{crop.pts[k]=[clamp(crop.drag.pts[k][0]+dx,0,crop.w),clamp(crop.drag.pts[k][1]+dy,0,crop.h)];});}
-  drawCrop();e.preventDefault();
+function cropMove(g){
+  const s=crop.scale,dx=(g.last[0]-g.sx)/s,dy=(g.last[1]-g.sy)/s,q=g.pts.map(p=>p.slice());
+  if(g.c!=null)q[g.c]=[clamp(g.pts[g.c][0]+dx,0,crop.w),clamp(g.pts[g.c][1]+dy,0,crop.h)];
+  else{const i=g.m,j=(i+1)%4,a=g.pts[i],b=g.pts[j];let nx=-(b[1]-a[1]),ny=b[0]-a[0];const L=Math.hypot(nx,ny)||1;nx/=L;ny/=L;const d=dx*nx+dy*ny;
+    for(const k of [i,j])q[k]=[clamp(g.pts[k][0]+nx*d,0,crop.w),clamp(g.pts[k][1]+ny*d,0,crop.h)];}
+  if(!cropConvex(q)){ /* go as far as allowed along the way from the last good outline, then stop there */
+    const p0=crop.pts;let lo=0,hi=1,okq=null;
+    for(let it=0;it<10;it++){const t=(lo+hi)/2,m=p0.map((p,k)=>[p[0]+(q[k][0]-p[0])*t,p[1]+(q[k][1]-p[1])*t]);if(cropConvex(m)){lo=t;okq=m;}else hi=t;}
+    if(!okq)return;q.splice(0,4,...okq);}
+  crop.pts=q;drawCrop();if(g.c!=null)showLoupe(q[g.c]);
+}
+cropMidEl.addEventListener("pointermove",e=>{
+  const g=crop.drag;if(!g||e.pointerId!==g.id)return;e.preventDefault();g.last=[e.clientX,e.clientY];
+  if(!g.raf)g.raf=requestAnimationFrame(()=>{g.raf=0;if(crop.drag===g&&g.last)cropMove(g);});
 });
-const endCropDrag=()=>{crop.drag=null;loupe.style.display="none";};
-cropSvg.addEventListener("pointerup",endCropDrag);cropSvg.addEventListener("pointercancel",endCropDrag);
+const endCropDrag=e=>{const g=crop.drag;if(!g||(e&&e.pointerId!==g.id))return;if(g.raf){cancelAnimationFrame(g.raf);g.raf=0;}if(g.last)cropMove(g);
+  crop.drag=null;loupe.style.display="none";drawCrop();};
+cropMidEl.addEventListener("pointerup",endCropDrag);cropMidEl.addEventListener("pointercancel",endCropDrag);
 function showLoupe(pt){
   const z=2.2,R=loupeC.width/2;const ctx=loupeC.getContext("2d");ctx.fillStyle="#000";ctx.fillRect(0,0,loupeC.width,loupeC.height);
   const ss=crop.srcScale;const sx=pt[0]*ss,sy=pt[1]*ss;const half=R/z;
   ctx.drawImage(crop.src,sx-half,sy-half,half*2,half*2,0,0,loupeC.width,loupeC.height);
-  ctx.strokeStyle="#00c5ff";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(R-30,R);ctx.lineTo(R+30,R);ctx.moveTo(R,R-30);ctx.lineTo(R,R+30);ctx.stroke();
-  const x=pt[0]*crop.scale,y=pt[1]*crop.scale;let lx=x-65,ly=y-165;if(ly<0)ly=y+40;lx=clamp(lx,0,cropWrap.clientWidth-130);
-  loupe.style.left=lx+"px";loupe.style.top=ly+"px";loupe.style.display="block";
+  const i=crop.pts.indexOf(pt),k=ss*z;
+  if(i>=0){ctx.strokeStyle="rgba(0,197,255,.9)";ctx.lineWidth=3;ctx.beginPath();
+    for(const n of [crop.pts[(i+1)%4],crop.pts[(i+3)%4]]){ctx.moveTo(R,R);ctx.lineTo(R+(n[0]-pt[0])*k,R+(n[1]-pt[1])*k);}ctx.stroke();}
+  ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(R-18,R);ctx.lineTo(R+18,R);ctx.moveTo(R,R-18);ctx.lineTo(R,R+18);ctx.stroke();
+  const W=cropWrap.clientWidth,x=pt[0]*crop.scale;let side=loupe.dataset.side||(x<W/2?"r":"l");
+  if(side==="r"&&x>W/2+40)side="l";else if(side==="l"&&x<W/2-40)side="r";
+  loupe.dataset.side=side;loupe.style.left=(side==="r"?Math.max(0,W-138):8)+"px";loupe.style.top="8px";loupe.style.display="block";
 }
 function closeCrop(v){$("cropStage").classList.remove("show");loupe.style.display="none";if(!openSheets.length&&!document.querySelector(".stage.show"))document.body.classList.remove("lock");const r=crop.resolve;crop.resolve=null;crop.src=null;if(r)r(v);}
 $("cropCancel").onclick=()=>closeCrop(null);
@@ -1594,7 +1649,7 @@ $("docName").addEventListener("change",async()=>{const v=$("docName").value.trim
 $("docName").addEventListener("keydown",e=>{if(e.key==="Enter")e.target.blur();});
 /* tools */
 $("tRot").onclick=async()=>{const p=curPage();if(!p)return;p.rot=((p.rot|0)+90)%360;await rerender(p,"Rotating…");};
-$("tAdj").onclick=()=>{$("adj").classList.toggle("show");$("tAdj").classList.toggle("on",$("adj").classList.contains("show"));};
+$("tAdj").onclick=()=>{$("adj").classList.toggle("show");const on=$("adj").classList.contains("show");$("tAdj").classList.toggle("on",on);$("edTools").classList.toggle("adjOn",on);};
 function adjPreview(){const b=+$("adjB").value,c=+$("adjC").value,sa=+$("adjS").value;$("adjBo").value=b;$("adjCo").value=c;$("adjSo").value=sa;$("pvImg").style.filter=`brightness(${1+b/200}) contrast(${1+c/100}) saturate(${1+sa/100})`;}
 $("adjB").oninput=adjPreview;$("adjC").oninput=adjPreview;$("adjS").oninput=adjPreview;
 $("adjReset").onclick=async()=>{const p=curPage();$("adjB").value=0;$("adjC").value=0;$("adjS").value=0;adjPreview();if(p&&(p.bright||p.contrast||p.sat)){p.bright=0;p.contrast=0;p.sat=0;await rerender(p,"Resetting…");}};
@@ -1617,10 +1672,11 @@ function addPageMenu(){showMenu("Add page",[
 $("abAdd").onclick=addPageMenu;
 $("abShare").onclick=()=>openExport({docId:ed.doc.id});
 $("edMenu").onclick=()=>showMenu(ed.doc.name,[
+  {icon:"i-crop",label:"Crop this page",run:()=>$("tCrop").click()},
   {icon:"i-edit",label:"Rename",run:async()=>{const v=await promptDlg("Rename document",ed.doc.name);if(v){ed.doc.name=v;$("docName").value=v;await Store.putDoc(ed.doc);}}},
   {icon:"i-text",label:"Recognise text on all pages (OCR)",run:()=>openOcr(true)},
   {icon:"i-share",label:"Share / Export",run:()=>openExport({docId:ed.doc.id})},
-  {icon:"i-crop",label:"Re-detect edges on all pages",run:redetectAll},
+  {icon:"i-auto",label:"Auto-detect edges on all pages",run:redetectAll},
   {icon:"i-trash",label:"Delete document",danger:true,run:async()=>{const ok=await confirmDlg("Delete document",`Delete <b>${escapeHtml(ed.doc.name)}</b> and its ${ed.pages.length} page(s)?`,"Delete");if(!ok)return;await Store.delDoc(ed.doc.id);toast("Deleted");showLibrary();}}]);
 async function redetectAll(){setBusy(true,"Detecting edges…");try{for(const p of ed.pages){const bm=await blobToBitmap(p.orig);const d=await detectOnBitmap(bm);const whole=importWholePage(bm,d);if(bm.close)bm.close();if(whole&&p.corners){p.corners=null;await renderPage(p);await Store.putPage(p);}else if(!whole&&d&&d.area>=0.12){p.corners=d.corners;await renderPage(p);await Store.putPage(p);}}await refreshDocMeta(ed.doc.id);ed.filterCache={};renderEditor();toast("Done");}catch(e){toast(e.message);}finally{setBusy(false);}}
 
