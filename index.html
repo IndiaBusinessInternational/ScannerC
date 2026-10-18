@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.6.4">
+<meta name="ibi-build" content="v2.7.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -277,6 +277,11 @@
   .edtools .filters{display:none}
   .edtools.fltOn .filters{display:flex}
   .preview .nav.zm{top:8px;right:8px;transform:none}
+  .qcchip{position:absolute;top:10px;left:10px;z-index:3;border:0;border-radius:999px;background:#f5a524;color:#1d1300;font-weight:700;font-size:calc(13px*var(--ts));padding:7px 12px;box-shadow:0 4px 14px rgba(0,0,0,.45);max-width:calc(100% - 80px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .camqc{position:absolute;left:8px;right:8px;top:8px;z-index:6;display:flex;align-items:center;gap:8px;background:rgba(245,165,36,.96);color:#1d1300;border-radius:14px;padding:8px 8px 8px 12px;font-size:calc(14px*var(--ts));font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+  .camqc span{flex:1 1 auto;min-width:0}
+  .camqc .sbtn{background:rgba(0,0,0,.18);color:#1d1300;height:38px;font-weight:700}
+  .camqc .sbtn.on{background:#1d1300;color:#ffd27a}
   .viewer{position:fixed;inset:0;z-index:260;background:#000;display:none;touch-action:none;overflow:hidden;user-select:none;-webkit-user-select:none}
   .viewer.show{display:block}
   #vwImg{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;max-height:none;will-change:transform;pointer-events:none;-webkit-user-drag:none}
@@ -421,7 +426,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.6.4</span>
+    <span class="version" id="versionTag">v2.7.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -468,6 +473,7 @@
       <div>
         <div class="preview" id="preview">
           <img id="pvImg" alt="Scanned page">
+          <button class="qcchip" id="pvQc" hidden title="This page may need a retake"></button>
           <button class="nav zm" id="pvZoom" title="Full screen — pinch or double-tap to zoom"><svg><use href="#i-zoom"/></svg></button>
           <button class="nav l" id="pvPrev" title="Previous page"><svg><use href="#i-back"/></svg></button>
           <button class="nav r" id="pvNext" title="Next page"><svg><use href="#i-fwd"/></svg></button>
@@ -504,7 +510,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.6.4</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.7.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -545,6 +551,7 @@
     </div>
     <div class="zoomrow" id="zoomRow"><span>1×</span><input type="range" id="camZoom" min="1" max="1" step="0.1" value="1"><span id="zoomVal">1×</span></div>
     <div class="camhint"><span id="camHint">Starting camera…</span></div>
+    <div class="camqc" id="camQc" hidden><span id="camQcTxt"></span><button class="sbtn on" id="camQcRetake">Retake</button><button class="sbtn" id="camQcKeep">Keep</button></div>
   </div>
   <div class="bot">
     <div class="modes" id="camModes">
@@ -612,10 +619,13 @@
   <div class="sbody">
     <div class="field"><label>Format</label>
       <div class="seg" id="exFmt"><button data-v="pdf" class="on">PDF</button><button data-v="jpg">JPG images</button><button data-v="png">PNG images</button><button data-v="txt">Text (OCR)</button></div></div>
+    <div class="field" id="exLimField"><label>Size limit <span class="muted small">— for upload portals (GST, bank, exam, passport…)</span></label>
+      <div class="seg" id="exLim"><button data-v="0" class="on">No limit</button><button data-v="100">100 KB</button><button data-v="200">200 KB</button><button data-v="500">500 KB</button><button data-v="1000">1 MB</button><button data-v="2000">2 MB</button><button data-v="c">Custom</button></div>
+      <div id="exLimCustomWrap" hidden style="margin-top:8px"><input class="inp" id="exLimCustom" type="number" inputmode="numeric" min="20" max="50000" step="10" placeholder="Limit in KB, e.g. 300"></div></div>
     <div id="exPdfOpts">
       <div class="field"><label>Page size</label>
         <div class="seg" id="exSize"><button data-v="a4" class="on">A4</button><button data-v="letter">Letter</button><button data-v="legal">Legal</button><button data-v="auto">Fit to scan</button></div></div>
-      <div class="field"><label>Quality / file size</label>
+      <div class="field" id="exQField"><label>Quality / file size</label>
         <div class="seg" id="exQ"><button data-v="small">Small</button><button data-v="balanced" class="on">Balanced</button><button data-v="high">High quality</button></div></div>
       <div class="swrow"><div class="lbl">Searchable PDF (OCR text layer)<small>Text becomes selectable and searchable. Takes a few seconds per page.</small></div><label class="tgl"><input type="checkbox" id="exOcr"><span></span></label></div>
       <div class="swrow"><div class="lbl">Protect with a password<small>The reader must type it to open the PDF.</small></div><label class="tgl"><input type="checkbox" id="exPwOn"><span></span></label></div>
@@ -672,7 +682,7 @@
 <div class="overlay" id="ovConfirm"><div class="sheet">
   <div class="shead"><h3 id="cfTitle">Confirm</h3><button class="x" data-close><svg><use href="#i-x"/></svg></button></div>
   <div class="sbody" id="cfBody"></div>
-  <div class="sfoot"><button class="btn primary" id="cfOk">OK</button><button class="btn" data-close>Cancel</button></div>
+  <div class="sfoot"><button class="btn primary" id="cfOk">OK</button><button class="btn" id="cfCancel" data-close>Cancel</button></div>
 </div></div>
 
 <div class="overlay" id="ovPrompt"><div class="sheet">
@@ -710,7 +720,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.6.4</b></div>
+      <div class="kv"><span>Version</span><b>v2.7.0</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -747,7 +757,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.6.4";
+const APP_VERSION="v2.7.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -838,7 +848,7 @@ function openSheet(id){const o=$(id);o.classList.add("show");document.body.class
 function closeSheet(id){const o=$(id);o.classList.remove("show");const i=openSheets.indexOf(id);if(i>=0)openSheets.splice(i,1);if(!openSheets.length&&!document.querySelector(".stage.show"))document.body.classList.remove("lock");}
 $$(".overlay").forEach(o=>{o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-close]"))closeSheet(o.id);});});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&openSheets.length)closeSheet(openSheets[openSheets.length-1]);});
-function confirmDlg(title,html,okText){return new Promise(res=>{$("cfTitle").textContent=title;$("cfBody").innerHTML=html;const ok=$("cfOk");ok.textContent=okText||"OK";
+function confirmDlg(title,html,okText,cancelText){return new Promise(res=>{$("cfTitle").textContent=title;$("cfBody").innerHTML=html;const ok=$("cfOk");ok.textContent=okText||"OK";$("cfCancel").textContent=cancelText||"Cancel";
   const done=v=>{ok.onclick=null;closeSheet("ovConfirm");res(v);};ok.onclick=()=>done(true);
   $("ovConfirm").querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>done(false));openSheet("ovConfirm");});}
 function promptDlg(title,value){return new Promise(res=>{$("prTitle").textContent=title;const inp=$("prInput");inp.value=value||"";const ok=$("prOk");
@@ -962,7 +972,7 @@ function flareLevel(d,n,pm){
   return f;}
 /* filter recipes: kn = white-clean knee (lum lo,hi), nc = neutral chroma limits it applies under, sat, sharpen */
 const RECIPE={auto:{kn:[0.88,0.97],nc:[0.06,0.13],sat:1.15,sh:0.7,ink:0.9},
-  enhance:{kn:[0.80,0.93],nc:[0.08,0.16],sat:1.3,sh:0.9,ink:1.2},
+  enhance:{kn:[0.74,0.90],nc:[0.10,0.22],sat:1.45,vib:0.55,curve:0.22,sh:1.15,ink:1.35},   /* v2.7.0 Magic colour: vivid and bold (CEO: "more vibrant and more colourful") */
   white:{kn:[0.62,0.85],nc:[0.12,0.24],sat:1.55,sh:0.8,ink:1.2},
   photo:{global:true,sat:1.1,sh:0.35,ink:0},
   gray:{kn:[0.86,0.96],nc:[1,2],sat:0,sh:0.7,ink:1.0},
@@ -992,7 +1002,7 @@ function applyFilter(d,w,h,filter,bright,contrast,sat2){
     if(pm.global){const e=pm.E.map(a=>a[0]),s=e[0]+e[1]+e[2],ch=Math.max(...e.map(v=>Math.abs(v/s-1/3)));
       if(ch>0.05){const l=e[0]*.2126+e[1]*.7152+e[2]*.0722;for(let k=0;k<3;k++)pm.E[k].fill(l);}}
     const f=flareLevel(d,n,pm),{gw,gh,cs,E}=pm;
-    const kn=R.kn,nc=R.nc,sat=R.sat,ik=R.ink||0;
+    const kn=R.kn,nc=R.nc,sat=R.sat,ik=R.ink||0,vib=R.vib||0,cu=R.curve||0;
     const X0=new Int32Array(w),X1=new Int32Array(w),FX=new Float32Array(w);
     for(let x=0;x<w;x++){let u=x/cs-0.5;u=u<0?0:u>gw-1?gw-1:u;X0[x]=u|0;X1[x]=Math.min(X0[x]+1,gw-1);FX[x]=u-X0[x];}
     const rowE=[new Float32Array(gw),new Float32Array(gw),new Float32Array(gw)],f0=f[0],f1=f[1],f2=f[2];
@@ -1004,7 +1014,9 @@ function applyFilter(d,w,h,filter,bright,contrast,sat2){
         let r=toG((LIN[d[i]]-f0)*(e0[a]+(e0[b]-e0[a])*fx)),g=toG((LIN[d[i+1]]-f1)*(e1[a]+(e1[b]-e1[a])*fx)),bb=toG((LIN[d[i+2]]-f2)*(e2[a]+(e2[b]-e2[a])*fx));
         let l=(r*.299+g*.587+bb*.114)/255;
         if(ik&&l<0.95){const C0=(Math.max(r,g,bb)-Math.min(r,g,bb))/255,q=ik*(1-ss(0.08,0.22,C0));if(q>0){const nl=Math.pow(l,1+q*(1-l)),m=l>0.004?nl/l:1;r*=m;g*=m;bb*=m;l=nl;}}
-        if(sat!==1){const L8=l*255;r=L8+(r-L8)*sat;g=L8+(g-L8)*sat;bb=L8+(bb-L8)*sat;}
+        if(cu&&l<1){const sl=l*l*(3-2*l),nl=l+(sl-l)*cu*2,m=l>0.004?nl/l:1;r*=m;g*=m;bb*=m;l=nl;}
+        if(vib){const L8=l*255,C=(Math.max(r,g,bb)-Math.min(r,g,bb))/255,k=1+((sat-1)+vib*(1-ss(0.3,0.7,C)))*ss(0.02,0.08,C);r=L8+(r-L8)*k;g=L8+(g-L8)*k;bb=L8+(bb-L8)*k;}
+        else if(sat!==1){const L8=l*255;r=L8+(r-L8)*sat;g=L8+(g-L8)*sat;bb=L8+(bb-L8)*sat;}
         if(l>k0){const C=(Math.max(r,g,bb)-Math.min(r,g,bb))/255,t=ss(k0,k1,l)*(1-ss(n0,n1,C));if(t>0){r+=(255-r)*t;g+=(255-g)*t;bb+=(255-bb)*t;}}
         d[i]=r;d[i+1]=g;d[i+2]=bb;}}
     if(R.sh)sharpenL(d,w,h,R.sh);
@@ -1257,12 +1269,55 @@ async function compactOriginal(page){
     page.orig=blob;page.w=c.width;page.h=c.height;page.compactSize=blob.size;return true;
   }catch(e){return false;}
 }
+/* Quality guard (v2.7.0): like a careful operator, check each page right after it is taken — blur, glare, too dark, too small,
+   cut off — and offer Retake at once. Metrics run on the cropped page BEFORE any filter (calibrated on a test set: sharp pages
+   score 3.3-3.6, a normal phone shot ~1.5, clearly blurry text 0.5-0.85). */
+function pageQC(d,w,h){
+  const s=Math.min(1,1000/Math.max(w,h)),W=Math.max(8,Math.round(w*s)),H=Math.max(8,Math.round(h*s)),N=W*H;
+  const g=new Float32Array(N),hi=new Uint8Array(N);   /* area-average downscale, so the blur score does not depend on the photo size */
+  for(let y=0;y<H;y++){const y0=Math.floor(y/s),y1=Math.max(y0+1,Math.min(h,Math.floor((y+1)/s)));for(let x=0;x<W;x++){const x0=Math.floor(x/s),x1=Math.max(x0+1,Math.min(w,Math.floor((x+1)/s)));
+    let a=0,n=0,c=0;for(let yy=y0;yy<y1;yy++)for(let xx=x0;xx<x1;xx++){const i=(yy*w+xx)*4;a+=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;if(d[i]>=250&&d[i+1]>=250&&d[i+2]>=250)c++;n++;}
+    g[y*W+x]=a/n;hi[y*W+x]=c*2>n?1:0;}}
+  /* sharpness: at the strongest edges, a crisp edge has a large second derivative relative to its slope */
+  const G=new Float32Array(N),Lp=new Float32Array(N);
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){const p=y*W+x;
+    const gx=(g[p-W+1]+2*g[p+1]+g[p+W+1])-(g[p-W-1]+2*g[p-1]+g[p+W-1]),gy=(g[p+W-1]+2*g[p+W]+g[p+W+1])-(g[p-W-1]+2*g[p-W]+g[p-W+1]);
+    G[p]=Math.hypot(gx,gy)/8;Lp[p]=Math.abs(4*g[p]-g[p-1]-g[p+1]-g[p-W]-g[p+W]);}
+  const gs=Array.from(G).filter(v=>v>0).sort((a,b)=>a-b);const thr=Math.max(12,gs[Math.floor(gs.length*0.985)]||0);
+  /* edge sharpness = max Laplacian within 1px of a strong-gradient pixel, over the gradient */
+  const r=[];for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){const p=y*W+x;if(G[p]<thr)continue;let m=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const v=Lp[p+dy*W+dx];if(v>m)m=v;}r.push(m/G[p]);}
+  r.sort((a,b)=>a-b);const sharp=r.length?r[r.length>>1]:0;
+  /* brightness of the paper (90th percentile) and glare (clipped white blobs) */
+  const gl=Array.from(g).sort((a,b)=>a-b),paper=gl[Math.floor(N*0.9)],p60=gl[Math.floor(N*0.6)],p99=gl[Math.floor(N*0.995)];
+  const cs=16,cw=Math.ceil(W/cs),ch=Math.ceil(H/cs);let glareCells=0,gx0=0,gy0=0;
+  for(let cy=0;cy<ch;cy++)for(let cx=0;cx<cw;cx++){let k=0,n=0;for(let y=cy*cs;y<Math.min(H,cy*cs+cs);y++)for(let x=cx*cs;x<Math.min(W,cx*cs+cs);x++){n++;k+=hi[y*W+x];}
+    if(n&&k/n>0.7){glareCells++;gx0+=cx;gy0+=cy;}}
+  const glare=glareCells/(cw*ch);
+  return {sharp:+sharp.toFixed(3),edges:r.length,paper:Math.round(paper),p60:Math.round(p60),p99:Math.round(p99),glare:+glare.toFixed(4),gcx:glareCells?gx0/glareCells/cw:0,gcy:glareCells?gy0/glareCells/ch:0,px:Math.max(w,h)};
+}
+function qcCut(page){
+  const c=page.corners;if(!c)return [];const m=0.012*Math.max(page.w,page.h),W=page.w,H=page.h;
+  const sides=[["top",(a,b)=>a[1]<m&&b[1]<m],["right",(a,b)=>a[0]>W-m&&b[0]>W-m],["bottom",(a,b)=>a[1]>H-m&&b[1]>H-m],["left",(a,b)=>a[0]<m&&b[0]<m]];
+  const hit=sides.filter((sd,i)=>sd[1](c[i],c[(i+1)%4])).map(sd=>sd[0]);return hit.length>=4?[]:hit;   /* all four = the whole photo was chosen on purpose */
+}
+function qcWhere(x,y){const v=y<0.34?"top":y>0.66?"bottom":"",h=x<0.34?"left":x>0.66?"right":"";return (v&&h)?v+"-"+h:(v||h||"middle");}
+function qcIssues(page){
+  const q=page.qc;if(!q)return [];const out=[];
+  if(q.edges>=400&&q.sharp<0.88)out.push({k:"blur",t:"Blurry",tip:"Hold the phone steady, tap the screen to focus, or add light."});
+  if(q.glare>=0.01&&q.glare<=0.35&&q.p60<240)out.push({k:"glare",t:"Glare",tip:`A shiny spot near the ${qcWhere(q.gcx,q.gcy)} hides part of the page. Tilt the phone a little, or switch the torch off.`});
+  if(q.paper<95&&(q.p99==null||q.p99<150))out.push({k:"dark",t:"Too dark",tip:"Turn on a light, or use the torch."});   /* a dark card with white lettering is not a dark photo */
+  if(q.px<1000)out.push({k:"lowres",t:"Low resolution",tip:"Move the phone closer so the page fills the screen."});
+  if(q.cut&&q.cut.length)out.push({k:"cut",t:"Cut off",tip:`The page touches the ${q.cut.join(" and ")} edge of the photo, so part of it may be missing. Step back a little.`});
+  return out;
+}
 async function renderPage(page){
   await compactOriginal(page);
   const bm=await blobToBitmap(page.orig);
   let img=await bitmapToImageData(bm,2600);
   const sx=img.width/bmW(bm);
   if(page.corners){const c=page.corners.map(p=>[p[0]*sx,p[1]*sx]);img=await warpImageData(img,c);}
+  const qk=JSON.stringify(page.corners)+"|"+(page.orig&&page.orig.size);
+  if(page.qcKey!==qk){try{page.qc=pageQC(img.data,img.width,img.height);page.qc.px=Math.round(page.qc.px/sx);page.qc.cut=qcCut(page);}catch(e){page.qc=null;}page.qcKey=qk;page.qcOk=false;}
   img=await filterImageData(img,page.filter||"original",page.bright|0,page.contrast|0,page.sat|0);
   let c=imageDataToCanvas(img);c=rotateCanvas(c,page.rot|0);
   page.proc=await canvasToBlob(c,"image/jpeg",0.9);page.thumb=await thumbFromCanvas(c,300);page.pw=c.width;page.ph=c.height;
@@ -1451,17 +1506,30 @@ async function handleCapturedBlob(blob,opts){
 }
 async function commitPage(blob,corners,extra){
   const doc=await ensureDoc(cam.docId);cam.docId=doc.id;
-  if(cam.retakeId){const old=await Store.getPage(cam.retakeId);if(old){const p=Object.assign(old,{orig:blob,corners,rot:0,bright:0,contrast:0},extra||{});const bm=await blobToBitmap(blob);p.w=bmW(bm);p.h=bmH(bm);if(bm.close)bm.close();await renderPage(p);await Store.putPage(p);await refreshDocMeta(doc.id);cam.retakeId=null;cam.lastThumb=p.thumb;cam.count++;updateCamCount();finishSession(true);return;}}
+  if(cam.retakeId){const old=await Store.getPage(cam.retakeId);if(old){const p=Object.assign(old,{orig:blob,corners,rot:0,bright:0,contrast:0},extra||{});const bm=await blobToBitmap(blob);p.w=bmW(bm);p.h=bmH(bm);if(bm.close)bm.close();await renderPage(p);await Store.putPage(p);await refreshDocMeta(doc.id);cam.retakeId=null;cam.focusId=p.id;cam.lastThumb=p.thumb;cam.count++;updateCamCount();finishSession(true);return;}}
   const page=await newPage(doc.id,blob,Object.assign({corners:corners||null},extra||{}));await renderPage(page);await appendPage(doc.id,page);
   cam.count++;cam.lastThumb=page.thumb;updateCamCount();vibrate(20);
+  if(cam.mode==="doc"&&$("camStage").classList.contains("show")){const iss=qcIssues(page);if(iss.length)showCamQc(page,iss);}
   if(cam.mode!=="doc")camHint("Saved. Tap the shutter for another, or Done.");
 }
 function updateCamCount(){const t=$("camThumb");if(cam.count>0){t.style.display="block";$("camCount").textContent=cam.count;if(cam.lastThumb)$("camThumbImg").src=cam.lastThumb;$("camDoneRow").hidden=false;$("camDoneTxt").textContent=`Done (${cam.count} page${cam.count>1?"s":""})`;}else{t.style.display="none";$("camDoneRow").hidden=true;}}
+/* the quality guard right after a shot: say what is wrong and offer Retake (the page is removed and can be shot again) */
+let _camQc=null;
+function showCamQc(page,iss){_camQc={page,n:cam.count};$("camQcTxt").textContent=`Page ${cam.count}: ${iss.map(i=>i.t.toLowerCase()).join(", ")}. ${iss[0].tip}`;$("camQc").hidden=false;vibrate([30,60,30]);
+  clearTimeout(showCamQc.t);showCamQc.t=setTimeout(()=>{$("camQc").hidden=true;_camQc=null;},9000);}
+$("camQcKeep").onclick=()=>{$("camQc").hidden=true;if(_camQc){_camQc.page.qcOk=true;Store.putPage(_camQc.page);}_camQc=null;};
+$("camQcRetake").onclick=async()=>{const q=_camQc;$("camQc").hidden=true;_camQc=null;if(!q)return;
+  await Store.delPage(q.page.id);await refreshDocMeta(cam.docId);cam.count=Math.max(0,cam.count-1);
+  const left=await Store.pagesOf(cam.docId);cam.lastThumb=left.length?left[left.length-1].thumb:null;updateCamCount();if(cam.mode==="doc")cam.armed=true;camHint("Removed — take that page again");};
 async function finishSession(open){
   if(open)driveBackupRun({fromTap:true});   // the Done tap carries the gesture a sign-in needs
   stopStream();$("camStage").classList.remove("show");$("zoomRow").style.display="none";if(!openSheets.length&&!document.querySelector(".stage.show"))document.body.classList.remove("lock");
   const docId=cam.docId;const hadPages=cam.count>0;
   if(docId){const d=await refreshDocMeta(docId);if(d&&!d.pages){await Store.delDoc(docId);}}
+  /* v2.7.0 (CEO: "the newly scanned document should stay, not the old or previous one"): open on the page just scanned —
+     the first new page (page 1 of a new scan), or the page that was retaken — never on a page number left over from before */
+  if(docId&&hadPages){const ps=await Store.pagesOf(docId);const k=cam.focusId?ps.findIndex(x=>x.id===cam.focusId):-1;ed.idx=k>=0?k:Math.max(0,ps.length-cam.count);}
+  cam.focusId=null;
   if(open&&docId&&hadPages)await openEditor(docId);
   else if(cam.returnTo==="edit"&&docId)await openEditor(docId);
   else await showLibrary();
@@ -1695,6 +1763,7 @@ const FILTERS=[["auto","Auto"],["original","Original"],["enhance","Magic colour"
 function curPage(){return ed.pages[ed.idx]||null;}
 function showScreen(id){$$(".screen").forEach(s=>s.classList.toggle("active",s.id===id));document.body.classList.toggle("editing",id==="scrEdit");const isLib=id==="scrLib";$("fab").hidden=!isLib;$("actbar").hidden=isLib;if(!isLib){document.body.classList.remove("selmode");$("selBar").hidden=true;}window.scrollTo(0,0);}
 async function openEditor(docId){
+  if(!ed.doc||ed.doc.id!==docId){$("pvImg").removeAttribute("src");}   /* never show the previous document's page while the new one loads */
   const d=await Store.getDoc(docId);if(!d){toast("Document not found");return showLibrary();}
   ed.doc=d;ed.pages=await Store.pagesOf(docId);ed.idx=clamp(ed.idx,0,Math.max(0,ed.pages.length-1));ed.filterCache={};
   if(!ed.pages.length){await Store.delDoc(docId);toast("That document had no pages");return showLibrary();}
@@ -1712,7 +1781,11 @@ function renderPreview(){
   $("adjB").value=p.bright|0;$("adjC").value=p.contrast|0;$("adjS").value=p.sat|0;$("adjBo").value=p.bright|0;$("adjCo").value=p.contrast|0;$("adjSo").value=p.sat|0;
   $$("#filters button").forEach(b=>b.classList.toggle("on",b.dataset.f===(p.filter||"original")));
   $("tOcr").classList.toggle("on",!!p.ocr);
+  const iss=p.qcOk?[]:qcIssues(p),chip=$("pvQc");chip.hidden=!iss.length;if(iss.length)chip.textContent="⚠ "+iss.map(i=>i.t).join(" · ");
 }
+$("pvQc").onclick=async()=>{const p=curPage();if(!p)return;const iss=qcIssues(p);if(!iss.length)return;
+  const ok=await confirmDlg("Check this page","<ul style=\"margin:0 0 8px 18px;padding:0\">"+iss.map(i=>`<li style="margin-bottom:6px"><b>${i.t}.</b> ${i.tip}</li>`).join("")+"</ul><div class=\"muted small\">Retake it now, or keep it as it is.</div>","Retake","Keep");
+  if(ok)retakePage(p);else{p.qcOk=true;await Store.putPage(p);renderPreview();}};
 function renderPagesGrid(){
   const g=$("pages");g.innerHTML="";$("pgCount").textContent=`${ed.pages.length} page${ed.pages.length===1?"":"s"}`;
   ed.pages.forEach((p,i)=>{const d=document.createElement("div");d.className="pgc"+(i===ed.idx?" cur":"");d.draggable=true;d.dataset.i=i;
@@ -1885,29 +1958,60 @@ const QUALITY={small:{max:1400,q:0.62},balanced:{max:2200,q:0.82},high:{max:2600
 async function openExport(o){
   ex.docId=o.docId;ex.doc=await Store.getDoc(o.docId);ex.pages=await Store.pagesOf(o.docId);ex.fromEditor=$("scrEdit").classList.contains("active");ex.last=null;
   if(!ex.pages.length)return toast("This document has no pages");
-  $("exName").value=ex.doc.name;segInit("exFmt","pdf",updateExportUI);segInit("exSize",settings.size);segInit("exQ",settings.q);segInit("exPages","all");
+  $("exName").value=ex.doc.name;segInit("exFmt","pdf",updateExportUI);segInit("exLim","0",updateExportUI);$("exLimCustom").value="";segInit("exSize",settings.size);segInit("exQ",settings.q);segInit("exPages","all");
   $("exOcr").checked=false;$("exPwOn").checked=false;$("exPw").value="";$("exPwField").hidden=true;$("exProg").hidden=true;$("exProgTxt").textContent="";
   $("exPagesField").hidden=!(ex.fromEditor&&ex.pages.length>1);
   updateExportUI();openSheet("ovExport");
 }
 $("exPwOn").onchange=()=>{$("exPwField").hidden=!$("exPwOn").checked;if($("exPwOn").checked)setTimeout(()=>$("exPw").focus(),50);};
+function exLimitBytes(){const v=segVal("exLim");if(!v||v==="0")return 0;const kb=v==="c"?+$("exLimCustom").value:+v;return kb>=20?Math.floor(kb*1000):0;}
 function updateExportUI(){const f=segVal("exFmt");$("exPdfOpts").hidden=f!=="pdf";$("exPrint").hidden=f!=="pdf";
+  const lim=f==="pdf"||f==="jpg";$("exLimField").hidden=!lim;$("exLimCustomWrap").hidden=segVal("exLim")!=="c";
+  const L=lim?exLimitBytes():0;$("exQField").hidden=!!L;
   const n=selectedPages().length;const q=QUALITY[segVal("exQ")]||QUALITY.balanced;
+  if(L){$("exInfo").textContent=f==="pdf"?`${n} page${n>1?"s":""} → one PDF of at most ${Math.round(L/1000)} KB, as sharp as that allows. The exact size is shown once it is built.`:`${n} JPG image${n>1?"s":""}, each at most ${Math.round(L/1000)} KB, as sharp as that allows.`;return;}
   $("exInfo").textContent=f==="pdf"?`${n} page${n>1?"s":""} → one PDF, ${segVal("exSize")==="auto"?"page size follows each scan":segVal("exSize").toUpperCase()}. The exact file size is shown once it is built.`:
     f==="txt"?`${n} page${n>1?"s":""} → one text file (pages without recognised text are read first)`:`${n} ${f.toUpperCase()} image${n>1?"s (shared together, downloaded as a ZIP)":""}`;}
 $$("#exSize button,#exQ button,#exPages button").forEach(b=>b.addEventListener("click",updateExportUI));
+$("exLimCustom").addEventListener("input",updateExportUI);
 function selectedPages(){return (segVal("exPages")==="cur"&&ex.fromEditor)?[curPage()].filter(Boolean):ex.pages;}
 function exProgress(frac,txt){const p=$("exProg");p.hidden=false;p.firstElementChild.style.width=Math.round(frac*100)+"%";$("exProgTxt").textContent=txt||"";}
 async function pageCanvas(p,maxSide){const bm=await blobToBitmap(p.proc);const w=bmW(bm),h=bmH(bm);const s=Math.min(1,maxSide/Math.max(w,h));const c=makeCanvas(Math.round(w*s),Math.round(h*s));c.getContext("2d").drawImage(bm,0,0,c.width,c.height);if(bm.close)bm.close();return c;}
+/* Portal-ready size (v2.7.0). Upload portals reject files over a limit. With a limit set, find the SHARPEST result that fits:
+   keep the page resolution as high as possible first (sharpness is what makes text readable), then lower JPEG quality, and turn
+   to grey only as a last resort. JPEG bytes are measured on real encodes; the finished file is measured again before it is used.
+   1 KB is counted as 1000 bytes (the stricter of the two meanings portals use), so the file passes either way. */
+const FIT_SIDES=[2600,2300,2000,1750,1550,1350,1200,1050,920,800];
+function grayCanvas(c){const x=c.getContext("2d"),d=x.getImageData(0,0,c.width,c.height),a=d.data;for(let i=0;i<a.length;i+=4){const v=(a[i]*77+a[i+1]*150+a[i+2]*29)>>8;a[i]=a[i+1]=a[i+2]=v;}x.putImageData(d,0,0);return c;}
+async function fitPlan(pages,budget,perFile,onProg){
+  const bms=[];for(const p of pages)bms.push(await blobToBitmap(p.proc));
+  const native=Math.max(...bms.map(b=>Math.max(bmW(b),bmH(b))));const sides=FIT_SIDES.filter(v=>v<=native+50);if(!sides.length||sides[0]<native-50)sides.unshift(Math.round(native));
+  let tries=0;
+  const enc=async(side,q,gray)=>{tries++;onProg&&onProg(Math.min(0.9,tries/24),`Fitting under ${Math.round(budget/1000)} KB… (try ${tries})`);let tot=0,mx=0;
+    for(const bm of bms){const w=bmW(bm),h=bmH(bm),k=Math.min(1,side/Math.max(w,h));const c=makeCanvas(Math.max(1,Math.round(w*k)),Math.max(1,Math.round(h*k)));c.getContext("2d").drawImage(bm,0,0,c.width,c.height);if(gray)grayCanvas(c);
+      const u=c.toDataURL("image/jpeg",q),n=Math.floor((u.length-u.indexOf(",")-1)*3/4)-(u.endsWith("==")?2:u.endsWith("=")?1:0);   /* synchronous encode: same bytes, ~30x faster to measure than toBlob */
+      tot+=n;mx=Math.max(mx,n);await new Promise(r=>setTimeout(r,0));}return perFile?mx:tot;};
+  try{
+    for(const gray of [false,true]){
+      /* largest resolution that fits at a still-good quality (0.5), by binary search over the side list */
+      let lo=0,hi=sides.length-1,okIdx=-1;
+      while(lo<=hi){const m=(lo+hi)>>1;if(await enc(sides[m],0.5,gray)<=budget){okIdx=m;hi=m-1;}else lo=m+1;}
+      if(okIdx>=0){let qlo=0.5,qhi=0.92;for(let i=0;i<5;i++){const qm=(qlo+qhi)/2;if(await enc(sides[okIdx],qm,gray)<=budget)qlo=qm;else qhi=qm;}
+        return {max:sides[okIdx],q:+qlo.toFixed(3),gray};}
+      const last=sides[sides.length-1];for(const q of [0.42,0.35,0.3])if(await enc(last,q,gray)<=budget)return {max:last,q,gray};
+    }
+    return null;
+  }finally{bms.forEach(b=>{if(b.close)b.close();});}
+}
 const LATIN=/^[\x20-\x7E -ÿ–—‘’“”€]+$/;
 async function buildPDF(pages,opt,onProg){
-  await loadScript(LIB.jspdf);const {jsPDF}=window.jspdf;const q=QUALITY[opt.q]||QUALITY.balanced;
+  await loadScript(LIB.jspdf);const {jsPDF}=window.jspdf;const q=opt.fit?{max:opt.fit.max,q:opt.fit.q}:(QUALITY[opt.q]||QUALITY.balanced);
   const cfg={unit:"mm",compress:true};if(opt.password){cfg.encryption={userPassword:opt.password,ownerPassword:opt.password,userPermissions:["print","copy"]};}
   let doc=null;
   for(let i=0;i<pages.length;i++){
     const p=pages[i];onProg&&onProg(i/pages.length,`Preparing page ${i+1} of ${pages.length}…`);
     if(opt.ocr&&!p.ocr){onProg&&onProg(i/pages.length,`Reading text on page ${i+1} of ${pages.length}… (first run downloads the language data)`);try{await ocrPage(p,settings.lang||"eng",m=>{if(m.progress!=null&&m.status==="recognizing text")onProg&&onProg((i+m.progress*0.8)/pages.length,`Reading text on page ${i+1}: ${Math.round(m.progress*100)}%`);});}catch(e){toast("OCR skipped on page "+(i+1)+": "+e.message);}}
-    const c=await pageCanvas(p,q.max);const land=c.width>c.height;
+    const c=await pageCanvas(p,q.max);if(opt.fit&&opt.fit.gray)grayCanvas(c);const land=c.width>c.height;
     let pw,ph;if(opt.size==="auto"){pw=c.width/200*25.4;ph=c.height/200*25.4;}else{const mm=PAGE_MM[opt.size]||PAGE_MM.a4;pw=land?mm[1]:mm[0];ph=land?mm[0]:mm[1];}
     if(!doc){doc=new jsPDF(Object.assign({orientation:land?"l":"p",format:[pw,ph]},cfg));}else doc.addPage([pw,ph],land?"l":"p");
     const s=Math.min(pw/c.width,ph/c.height);const dw=c.width*s,dh=c.height*s,x=(pw-dw)/2,y=(ph-dh)/2;
@@ -1920,25 +2024,37 @@ async function buildPDF(pages,opt,onProg){
   doc.setProperties({title:opt.name||"Scan",subject:"Scanned with IBI ScannerC",creator:"IBI ScannerC "+APP_VERSION,keywords:"scan, IBI ScannerC"});
   onProg&&onProg(1,"PDF ready");return doc.output("blob");
 }
-async function buildImages(pages,fmt,onProg){const out=[];const q=QUALITY[segVal("exQ")]||QUALITY.balanced;
-  for(let i=0;i<pages.length;i++){onProg&&onProg(i/pages.length,`Preparing image ${i+1} of ${pages.length}…`);const c=await pageCanvas(pages[i],fmt==="png"?2600:q.max);out.push(await canvasToBlob(c,fmt==="png"?"image/png":"image/jpeg",fmt==="png"?undefined:Math.max(q.q,0.8)));}
+async function buildImages(pages,fmt,onProg,fit){const out=[];const q=fit?{max:fit.max,q:fit.q}:(QUALITY[segVal("exQ")]||QUALITY.balanced);
+  for(let i=0;i<pages.length;i++){onProg&&onProg(i/pages.length,`Preparing image ${i+1} of ${pages.length}…`);const c=await pageCanvas(pages[i],fmt==="png"?2600:q.max);if(fit&&fit.gray)grayCanvas(c);out.push(await canvasToBlob(c,fmt==="png"?"image/png":"image/jpeg",fmt==="png"?undefined:(fit?fit.q:Math.max(q.q,0.8))));}
   return out;}
 async function buildText(pages,onProg){let t=[];for(let i=0;i<pages.length;i++){const p=pages[i];if(!p.ocr){onProg&&onProg(i/pages.length,`Reading text on page ${i+1} of ${pages.length}…`);try{await ocrPage(p,settings.lang||"eng",m=>{if(m.progress!=null)onProg&&onProg((i+m.progress)/pages.length,`Reading page ${i+1}: ${m.status.replace(/_/g," ")} ${Math.round(m.progress*100)}%`);});}catch(e){}}
   t.push(`--- Page ${i+1} ---\n${p.ocr||"(no text found)"}`);}await refreshDocMeta(ex.docId);return new Blob([t.join("\n\n")],{type:"text/plain"});}
 /* Build whatever the sheet asks for → {files:[File], kind} */
 async function buildExport(){
   const fmt=segVal("exFmt");const pages=selectedPages();const name=safeName($("exName").value||ex.doc.name);
-  if(ex.last&&ex.last.key===JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]))return ex.last;
+  if(ex.last&&ex.last.key===JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,exLimitBytes(),pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]))return ex.last;
   const busy=b=>{$("exShare").disabled=$("exDownload").disabled=$("exPrint").disabled=b;};busy(true);
   try{
     let files=[],kind=fmt;
+    const LIM=(fmt==="pdf"||fmt==="jpg")?exLimitBytes():0;let fit=null;
+    if(segVal("exLim")==="c"&&!LIM&&(fmt==="pdf"||fmt==="jpg")){toast("Type the size limit in KB (20 or more)");busy(false);return null;}
+    const tooBig=()=>{const m=`Cannot fit ${pages.length>1&&fmt==="pdf"?pages.length+" pages":"this page"} under ${Math.round(LIM/1000)} KB and keep the text readable. Try a larger limit${pages.length>1&&fmt==="pdf"?", or fewer pages (Current page only)":""}.`;toast(m,5000);$("exProgTxt").textContent=m;};
     if(fmt==="pdf"){const pw=$("exPwOn").checked?$("exPw").value.trim():"";if($("exPwOn").checked&&!pw){toast("Type a password or switch the password off");busy(false);return null;}
-      const blob=await buildPDF(pages,{size:segVal("exSize"),q:segVal("exQ"),ocr:$("exOcr").checked,password:pw,name},exProgress);files=[new File([blob],name+".pdf",{type:"application/pdf"})];}
+      const opt={size:segVal("exSize"),q:segVal("exQ"),ocr:$("exOcr").checked,password:pw,name};let blob=null;
+      if(LIM){let budget=LIM-2500-900*pages.length;
+        for(let round=0;round<3;round++){fit=await fitPlan(pages,budget,false,exProgress);if(!fit){tooBig();return null;}
+          blob=await buildPDF(pages,Object.assign({fit},opt),exProgress);if(blob.size<=LIM)break;budget-=Math.ceil((blob.size-LIM)*1.15)+1000;blob=null;}
+        if(!blob){tooBig();return null;}}
+      else blob=await buildPDF(pages,opt,exProgress);
+      files=[new File([blob],name+".pdf",{type:"application/pdf"})];}
     else if(fmt==="txt"){const blob=await buildText(pages,exProgress);files=[new File([blob],name+".txt",{type:"text/plain"})];}
-    else{const blobs=await buildImages(pages,fmt,exProgress);files=blobs.map((b,i)=>new File([b],name+(blobs.length>1?` p${i+1}`:"")+(fmt==="png"?".png":".jpg"),{type:b.type}));}
-    exProgress(1,`Ready · ${fmtBytes(files.reduce((a,f)=>a+f.size,0))}`);
+    else{if(LIM&&fmt==="jpg"){fit=await fitPlan(pages,LIM,true,exProgress);if(!fit){tooBig();return null;}}
+      const blobs=await buildImages(pages,fmt,exProgress,fit);if(LIM&&blobs.some(b=>b.size>LIM)){tooBig();return null;}files=blobs.map((b,i)=>new File([b],name+(blobs.length>1?` p${i+1}`:"")+(fmt==="png"?".png":".jpg"),{type:b.type}));}
+    const tot=files.reduce((a,f)=>a+f.size,0);
+    if(LIM&&fit){const big=Math.max(...files.map(f=>f.size));exProgress(1,`Ready · ${files.length>1?"largest file ":""}${Math.ceil(big/1000)} KB ✓ under the ${Math.round(LIM/1000)} KB limit · ${fit.max} px, quality ${Math.round(fit.q*100)}%${fit.gray?", grey":""}`);}
+    else exProgress(1,`Ready · ${fmtBytes(tot)}`);
     if(fmt==="pdf")ex.doc.lastPdfSize=files[0].size;
-    ex.last={key:JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]),files,kind,name};
+    ex.last={key:JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,exLimitBytes(),pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]),files,kind,name};
     return ex.last;
   }catch(e){toast("Export failed: "+e.message,4000);$("exProgTxt").textContent="Failed: "+e.message;return null;}
   finally{busy(false);}
@@ -2033,18 +2149,18 @@ async function importImages(files,target){
   let n=0;
   try{for(const f of files){toast(`Importing ${++n} of ${files.length}…`,1500);try{await handleCapturedBlob(f,{fromCamera:false});}catch(e){toast("Skipped "+f.name+": "+e.message);}}}
   finally{if(target==="camera"){cam.busy=false;return;}}
-  if(target==="doc"){ed.filterCache={};await openEditor(ed.doc.id);toast(`${n} page${n>1?"s":""} added`);}
+  if(target==="doc"){ed.filterCache={};ed.idx=ed.pages.length;await openEditor(ed.doc.id);toast(`${n} page${n>1?"s":""} added`);}
   else if(cam.docId){ed.idx=0;await openEditor(cam.docId);}
 }
 $("fileImg").addEventListener("change",async e=>{const files=Array.from(e.target.files||[]);const t=e.target.dataset.target||"lib";e.target.value="";await importImages(files,t);});
 async function importPdf(file,target){
   await loadScript(LIB.pdfjs);pdfjsLib.GlobalWorkerOptions.workerSrc=LIB.pdfjsWorker;
   const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;const n=Math.min(pdf.numPages,60);if(pdf.numPages>60)toast("Only the first 60 pages are imported");
-  const doc=await ensureDoc(target==="doc"?ed.doc.id:null,file.name.replace(/\.pdf$/i,""));
+  const doc=await ensureDoc(target==="doc"?ed.doc.id:null,file.name.replace(/\.pdf$/i,""));const firstNew=(await Store.pagesOf(doc.id)).length;
   for(let i=1;i<=n;i++){toast(`Importing page ${i} of ${n}…`,1500);const pg=await pdf.getPage(i);const v0=pg.getViewport({scale:1});const scale=Math.min(3,2000/Math.max(v0.width,v0.height));const vp=pg.getViewport({scale});
     const c=makeCanvas(Math.round(vp.width),Math.round(vp.height));await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;
     const blob=await canvasToBlob(c,"image/jpeg",0.92);const page=await newPage(doc.id,blob,{filter:"original"});await renderPage(page);await appendPage(doc.id,page);}
-  ed.filterCache={};ed.idx=0;await openEditor(doc.id);toast(`${n} page${n>1?"s":""} imported`);
+  ed.filterCache={};ed.idx=firstNew;await openEditor(doc.id);toast(`${n} page${n>1?"s":""} imported`);
 }
 $("filePdf").addEventListener("change",async e=>{const files=Array.from(e.target.files);const t=e.target.dataset.target||"lib";e.target.value="";
   const pdfs=files.filter(f=>f.type==="application/pdf"||/\.pdf$/i.test(f.name)),imgs=files.filter(f=>!pdfs.includes(f));
