@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.5.3">
+<meta name="ibi-build" content="v2.6.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -39,7 +39,7 @@
 <style>
   :root{
     --accent:#00c5ff;--accent-dim:rgba(0,197,255,.14);--accent-line:rgba(0,197,255,.32);
-    --header-bg:#000000;--radius:14px;--maxw:1180px;--ts:1;
+    --header-bg:#000000;--radius:14px;--maxw:none;--ts:1;
     --font:'Roboto',system-ui,-apple-system,Segoe UI,Arial,sans-serif;
     --mono:'Roboto Mono','Roboto',ui-monospace,monospace;
     --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
@@ -319,28 +319,29 @@
 
   footer{max-width:var(--maxw);margin:0 auto;padding:6px 96px calc(110px + var(--sab)) 16px;text-align:left;color:var(--muted);font-size:calc(12px*var(--ts))}
   @media(max-width:430px){.btn.primary.wide{width:100%}}
-  /* v2.5.2/v2.5.3 (CEO 11 Oct 2026, every web app: "edge to edge with no padding"): phones use the full width — no outer gutter,
+  /* v2.5.2/v2.5.3 (CEO 11 Oct 2026, every web app: "edge to edge with no padding"): no outer gutter,
      full-bleed flat boxes, 10px inner side padding (the least that keeps letters off curved screen edges), header 8px.
+     v2.6.0 (CEO rule 15 Oct 2026): the same on EVERY screen size — no centred max-width column on laptops either.
      The page is never wider than the screen (clip, not hidden, so the sticky header keeps working). Fonts unchanged. */
+  html,body{overflow-x:clip}
+  .bar{padding-left:8px;padding-right:8px}
+  .clockbar{padding-left:8px;padding-right:8px}
+  main{padding-left:0;padding-right:0;padding-top:8px}
+  main .card{border-radius:0;border-left:0;border-right:0;box-shadow:none;overflow-wrap:break-word}
+  .card-head{padding-left:10px;padding-right:10px}
+  .card-body{padding-left:10px;padding-right:10px}
+  .libtop,#libStats,.docgrid,.empty{margin-left:10px;margin-right:10px}
+  .drvbanner{border-radius:0;border-left:0;border-right:0;padding-left:10px;padding-right:10px;overflow-wrap:break-word}
+  .edtop{padding-left:8px;padding-right:8px}
+  .preview{border-radius:0;border-left:0;border-right:0}
+  .filters{padding-left:10px;padding-right:10px}
+  .adj{padding-left:10px;padding-right:10px}
+  footer{padding-left:10px}
   @media(max-width:640px){
-    html,body{overflow-x:clip}
-    .bar{padding-left:8px;padding-right:8px}
-    .clockbar{padding-left:8px;padding-right:8px}
-    main{padding-left:0;padding-right:0;padding-top:8px}
-    .card{border-radius:0;border-left:0;border-right:0;box-shadow:none;overflow-wrap:break-word}
-    .card-head{padding-left:10px;padding-right:10px}
-    .card-body{padding-left:10px;padding-right:10px}
-    .libtop,#libStats,.docgrid,.empty{margin-left:10px;margin-right:10px}
-    .drvbanner{border-radius:0;border-left:0;border-right:0;padding-left:10px;padding-right:10px;overflow-wrap:break-word}
-    .edtop{padding-left:8px;padding-right:8px}
     .edgrid{gap:8px}
-    .preview{border-radius:0;border-left:0;border-right:0}
-    .filters{padding-left:10px;padding-right:10px}
-    .adj{padding-left:10px;padding-right:10px}
     .sheet .shead,.sheet .sbody{padding-left:10px;padding-right:10px}
     .sheet .sfoot{padding-left:10px;padding-right:10px}
     .sheet .sbody{overflow-wrap:break-word}
-    footer{padding-left:10px}
   }
 </style>
 </head>
@@ -386,7 +387,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.5.3</span>
+    <span class="version" id="versionTag">v2.6.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -442,12 +443,13 @@
         <div class="adj" id="adj">
           <div class="row"><label for="adjB">Brightness</label><input type="range" id="adjB" min="-100" max="100" value="0"><output id="adjBo">0</output></div>
           <div class="row"><label for="adjC">Contrast</label><input type="range" id="adjC" min="-100" max="100" value="0"><output id="adjCo">0</output></div>
+          <div class="row"><label for="adjS">Colour</label><input type="range" id="adjS" min="-100" max="100" value="0"><output id="adjSo">0</output></div>
           <div class="row" style="justify-content:flex-end"><button class="btn sm" id="adjReset">Reset</button><button class="btn sm primary" id="adjApply">Apply</button></div>
         </div>
         <div class="toolbar">
           <button class="tool" id="tCrop" title="Adjust the corners"><svg><use href="#i-crop"/></svg>Crop</button>
           <button class="tool" id="tRot" title="Rotate 90°"><svg><use href="#i-rot"/></svg>Rotate</button>
-          <button class="tool" id="tAdj" title="Brightness and contrast"><svg><use href="#i-adj"/></svg>Adjust</button>
+          <button class="tool" id="tAdj" title="Brightness, contrast and colour"><svg><use href="#i-adj"/></svg>Adjust</button>
           <button class="tool" id="tOcr" title="Recognise text (OCR)"><svg><use href="#i-text"/></svg>Text</button>
           <button class="tool" id="tRetake" title="Re-scan this page with the camera"><svg><use href="#i-retake"/></svg>Retake</button>
           <button class="tool" id="tDel" title="Delete this page"><svg><use href="#i-trash"/></svg>Delete</button>
@@ -464,7 +466,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.5.3</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.6.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -642,7 +644,7 @@
       </div>
     </div></div>
     <div class="field" style="margin-top:12px"><label>Text size</label><div class="seg" id="setTs"><button data-v="1">Default</button><button data-v="1.12">Large</button><button data-v="1.25">Extra large</button></div></div>
-    <div class="field"><label>Default filter for new scans</label><div class="seg" id="setFilter"><button data-v="auto">Auto</button><button data-v="original">Original</button><button data-v="enhance">Colour+</button><button data-v="gray">Grayscale</button><button data-v="bw">Black &amp; white</button></div></div>
+    <div class="field"><label>Default filter for new scans</label><div class="seg" id="setFilter"><button data-v="auto">Auto</button><button data-v="original">Original</button><button data-v="enhance">Magic colour</button><button data-v="photo">Photo</button><button data-v="white">Whiteboard</button><button data-v="gray">Grayscale</button><button data-v="bw">Black &amp; white</button></div></div>
     <div class="swrow"><div class="lbl">Auto-capture (default)<small>On: the photo is taken by itself once the page is steady. Off = Manual: tap the shutter, then adjust the corners.</small></div><label class="tgl"><input type="checkbox" id="setAuto"><span></span></label></div>
     <div class="swrow"><div class="lbl">Review corners after every capture<small>Off: pages are cropped automatically when the edges are found. You can always adjust later with Crop.</small></div><label class="tgl"><input type="checkbox" id="setReview"><span></span></label></div>
     <div class="swrow"><div class="lbl">Full-resolution stills<small>Uses the camera's photo mode when the phone supports it (sharper text).</small></div><label class="tgl"><input type="checkbox" id="setHiRes"><span></span></label></div>
@@ -657,7 +659,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.5.3</b></div>
+      <div class="kv"><span>Version</span><b>v2.6.0</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -678,7 +680,7 @@
       <li><b>Tap the blue camera button.</b> Allow the camera when the phone asks (once).</li>
       <li><b>Hold the phone flat over the page.</b> A blue outline appears on the document edges. In <b>Auto</b> (the default) keep still and the photo is taken for you. Switch to <b>Manual</b> at the top to tap the white shutter yourself and then drag the corners.</li>
       <li><b>Keep scanning</b> for more pages. The counter at the bottom-right shows how many you have. Tap <b>Done</b> when finished.</li>
-      <li><b>Check each page.</b> Pick a filter (Auto is best for paper), <b>Crop</b> to fix corners, <b>Rotate</b> if needed, <b>Text</b> to read the words. To re-arrange, press and hold a page in <b>Pages</b> and drag it.</li>
+      <li><b>Check each page.</b> Pick a filter — <b>Auto</b> gives true colours on clean white paper, <b>Magic colour</b> is brighter and bolder, <b>Photo</b> keeps photos and ID pictures natural, <b>Whiteboard</b> cleans boards, <b>B&amp;W</b> is crisp text for printing — <b>Crop</b> to fix corners, <b>Rotate</b> if needed, <b>Text</b> to read the words. To re-arrange, press and hold a page in <b>Pages</b> and drag it.</li>
       <li><b>Share / Export.</b> Choose PDF, tap <b>Share…</b>, then pick WhatsApp, Gmail or Google Drive from the phone's share sheet.</li>
     </ol>
     <div class="muted small">Tips: good light and no shadow from your hand. White paper on a white table works, but a darker or coloured surface under the page gives the fastest, surest edge detection. If the edges are not found, just tap the shutter and drag the corners. <b>ID card</b> mode puts the front and back on one page. <b>QR / Barcode</b> reads codes. Everything stays on this phone — nothing is uploaded.</div>
@@ -694,7 +696,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.5.3";
+const APP_VERSION="v2.6.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -844,51 +846,120 @@ function warp(img,w,h,corners,ow,oh){
     out[o+3]=255;}}
   return out;
 }
-function boxBlurSmall(src,w,h,r){ // src: Float32 per channel arrays [3][w*h]; returns blurred via integral image
-  const out=[];for(let c=0;c<3;c++){const s=src[c];const I=new Float64Array((w+1)*(h+1));
-    for(let y=1;y<=h;y++){let row=0;for(let x=1;x<=w;x++){row+=s[(y-1)*w+(x-1)];I[y*(w+1)+x]=I[(y-1)*(w+1)+x]+row;}}
-    const o=new Float32Array(w*h);
-    for(let y=0;y<h;y++){const y0=Math.max(0,y-r),y1=Math.min(h,y+r+1);for(let x=0;x<w;x++){const x0=Math.max(0,x-r),x1=Math.min(w,x+r+1);
-      const sum=I[y1*(w+1)+x1]-I[y0*(w+1)+x1]-I[y1*(w+1)+x0]+I[y0*(w+1)+x0];o[y*w+x]=sum/((y1-y0)*(x1-x0));}}
-    out.push(o);}return out;
+/* ---- v2.6 colour engine: paper-only light map + glare removal in linear light (what flatbed scanners measure) ---- */
+const LIN=new Float32Array(256);for(let i=0;i<256;i++){const x=i/255;LIN[i]=x<=0.04045?x/12.92:Math.pow((x+0.055)/1.055,2.4);}
+const GN=4096,GAM=new Float32Array(GN+1);for(let i=0;i<=GN;i++){const x=i/GN;GAM[i]=255*(x<=0.0031308?12.92*x:1.055*Math.pow(x,1/2.4)-0.055);}
+function toG(v){return GAM[v<=0?0:v>=1?GN:(v*GN+0.5)|0];}
+function ss(a,b,x){const t=x<=a?0:x>=b?1:(x-a)/(b-a);return t*t*(3-2*t);}
+function boxGrid(a,gw,gh,r){
+  const t=new Float32Array(gw*gh),o=new Float32Array(gw*gh);
+  for(let y=0;y<gh;y++){let s=0;const row=y*gw;for(let x=-r;x<gw;x++){if(x+r<gw)s+=a[row+x+r];if(x-r-1>=0)s-=a[row+x-r-1];if(x>=0)t[row+x]=s;}}
+  for(let x=0;x<gw;x++){let s=0;for(let y=-r;y<gh;y++){if(y+r<gh)s+=t[(y+r)*gw+x];if(y-r-1>=0)s-=t[(y-r-1)*gw+x];if(y>=0)o[y*gw+x]=s;}}
+  return o;}
+function maxGrid(a,gw,gh,r){
+  const t=new Float32Array(gw*gh),o=new Float32Array(gw*gh);
+  for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){let m=0;for(let k=Math.max(0,x-r);k<=Math.min(gw-1,x+r);k++){const v=a[y*gw+k];if(v>m)m=v;}t[y*gw+x]=m;}
+  for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){let m=0;for(let k=Math.max(0,y-r);k<=Math.min(gh-1,y+r);k++){const v=t[k*gw+x];if(v>m)m=v;}o[y*gw+x]=m;}
+  return o;}
+function median(a){const s=Float32Array.from(a).sort();return s.length?s[s.length>>1]:0;}
+/* Paper light map: per cell, the colour of its brightest 15% of pixels (linear). A cell counts as paper only when that colour
+   has the page's paper tint (so saffron bands, photos and pale-tint boxes never count) and is near the local brightest paper.
+   Non-paper cells are filled from surrounding paper, so coloured areas keep their real colour. */
+function paperMap(d,w,h){
+  const cs=Math.max(4,Math.round(Math.max(w,h)/90)),gw=Math.ceil(w/cs),gh=Math.ceil(h/cs),N=gw*gh;
+  const hist=new Uint32Array(N*64),cnt=new Uint32Array(N);
+  for(let y=0;y<h;y++){const cy=((y/cs)|0)*gw;for(let x=0;x<w;x++){const i=(y*w+x)*4,c=cy+((x/cs)|0);hist[c*64+((d[i]*77+d[i+1]*150+d[i+2]*29)>>10)]++;cnt[c]++;}}
+  const thr=new Uint8Array(N);
+  for(let c=0;c<N;c++){let acc=0,b=63;const lim=cnt[c]*0.15;for(;b>0;b--){acc+=hist[c*64+b];if(acc>=lim)break;}thr[c]=b;}
+  const R=new Float32Array(N),G=new Float32Array(N),B=new Float32Array(N),K=new Float32Array(N);
+  for(let y=0;y<h;y++){const cy=((y/cs)|0)*gw;for(let x=0;x<w;x++){const i=(y*w+x)*4,c=cy+((x/cs)|0);
+    if(((d[i]*77+d[i+1]*150+d[i+2]*29)>>10)>=thr[c]){R[c]+=LIN[d[i]];G[c]+=LIN[d[i+1]];B[c]+=LIN[d[i+2]];K[c]++;}}}
+  const L=new Float32Array(N);
+  for(let c=0;c<N;c++){const k=K[c]||1;R[c]/=k;G[c]/=k;B[c]/=k;L[c]=R[c]*.2126+G[c]*.7152+B[c]*.0722;}
+  const Ls=Float32Array.from(L).sort(),cut=Ls[Math.floor(N*0.7)];
+  const cr=[],cg=[],cb=[];
+  for(let c=0;c<N;c++)if(L[c]>=cut){const s=R[c]+G[c]+B[c]+1e-6;cr.push(R[c]/s);cg.push(G[c]/s);cb.push(B[c]/s);}
+  const pr=median(cr),pg=median(cg),pb=median(cb),tol=0.03;
+  const ok=new Float32Array(N);
+  for(let c=0;c<N;c++){const s=R[c]+G[c]+B[c]+1e-6;
+    if(L[c]>0.02&&Math.abs(R[c]/s-pr)<tol&&Math.abs(G[c]/s-pg)<tol&&Math.abs(B[c]/s-pb)<tol)ok[c]=L[c];}
+  const env4=maxGrid(ok,gw,gh,4),env14=maxGrid(ok,gw,gh,14),V=new Float32Array(N);let nv=0;
+  const pl=median(Array.from(ok).filter(v=>v>=cut));
+  for(let c=0;c<N;c++)if(ok[c]&&L[c]>=0.8*env4[c]&&L[c]>=0.45*env14[c]&&L[c]>=0.1*pl){V[c]=1;nv++;}
+  const E=[new Float32Array(N),new Float32Array(N),new Float32Array(N)];
+  if(nv<Math.max(4,N*0.03)){ /* no paper visible (a photo, a fully coloured card): one global white */
+    const idx=Array.from(L.keys()).sort((a,b)=>L[b]-L[a]).slice(0,Math.max(1,Math.round(N*0.03)));
+    let r=0,g=0,b=0;for(const c of idx){r+=R[c];g+=G[c];b+=B[c];}r/=idx.length;g/=idx.length;b/=idx.length;
+    E[0].fill(r);E[1].fill(g);E[2].fill(b);return {gw,gh,cs,E,global:true};}
+  const src=[R,G,B],S=src.map(a=>{const o=new Float32Array(N);for(let c=0;c<N;c++)o[c]=a[c]*V[c];return o;});
+  const done=new Uint8Array(N);let left=N;
+  for(const r of [1,2,4,8,16,32,64,128]){
+    const vb=boxGrid(V,gw,gh,r),sb=S.map(a=>boxGrid(a,gw,gh,r));
+    for(let c=0;c<N;c++){if(done[c]||vb[c]<(r===1?0.5:1.5))continue;for(let k=0;k<3;k++)E[k][c]=sb[k][c]/vb[c];done[c]=1;left--;}
+    if(!left)break;}
+  const one=new Float32Array(N).fill(1),nb=boxGrid(one,gw,gh,1);
+  for(let k=0;k<3;k++){const b=boxGrid(E[k],gw,gh,1);for(let c=0;c<N;c++)E[k][c]=b[c]/nb[c];}
+  return {gw,gh,cs,E,global:false};
 }
-function background(d,w,h){ // downsample x8, blur, return sampler
-  const f=8,sw=Math.max(1,Math.floor(w/f)),sh=Math.max(1,Math.floor(h/f));const ch=[new Float32Array(sw*sh),new Float32Array(sw*sh),new Float32Array(sw*sh)];
-  for(let y=0;y<sh;y++)for(let x=0;x<sw;x++){let r=0,g=0,b=0,n=0;for(let yy=0;yy<f;yy++){const py=y*f+yy;if(py>=h)break;for(let xx=0;xx<f;xx++){const px=x*f+xx;if(px>=w)break;const i=(py*w+px)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++;}}
-    const k=y*sw+x;ch[0][k]=r/n;ch[1][k]=g/n;ch[2][k]=b/n;}
-  // keep the bright (paper) estimate: max-filter-ish via blur of the brighter of pixel and neighbourhood
-  const rad=Math.max(2,Math.round(Math.max(sw,sh)/12));
-  let bl=boxBlurSmall(ch,sw,sh,rad);
-  for(let c=0;c<3;c++){const s=ch[c],b=bl[c];for(let i=0;i<s.length;i++)s[i]=Math.max(s[i],b[i]);}
-  bl=boxBlurSmall(ch,sw,sh,rad);
-  return {sw,sh,f,bl};
+/* Glare (veiling flare) per channel: the camera adds a little light everywhere, which greys the ink and dulls colours. */
+function flareLevel(d,n,pm){
+  const hist=new Uint32Array(256);for(let i=0;i<n*4;i+=4)hist[(d[i]*77+d[i+1]*150+d[i+2]*29)>>8]++;
+  let acc=0,b=0;for(;b<255;b++){acc+=hist[b];if(acc>=n*0.004)break;}
+  let r=0,g=0,bl=0,k=0;for(let i=0;i<n*4;i+=4)if(((d[i]*77+d[i+1]*150+d[i+2]*29)>>8)<=b){r+=LIN[d[i]];g+=LIN[d[i+1]];bl+=LIN[d[i+2]];k++;}
+  const f=[r/k,g/k,bl/k];
+  for(let c=0;c<3;c++){const m=median(pm.E[c]),mn=Math.min(...pm.E[c]);f[c]=Math.max(0,Math.min(f[c],0.12*m,0.5*mn));}
+  return f;}
+/* filter recipes: kn = white-clean knee (lum lo,hi), nc = neutral chroma limits it applies under, sat, sharpen */
+const RECIPE={auto:{kn:[0.88,0.97],nc:[0.06,0.13],sat:1.15,sh:0.7,ink:0.9},
+  enhance:{kn:[0.80,0.93],nc:[0.08,0.16],sat:1.3,sh:0.9,ink:1.2},
+  white:{kn:[0.62,0.85],nc:[0.12,0.24],sat:1.55,sh:0.8,ink:1.2},
+  photo:{global:true,sat:1.1,sh:0.35,ink:0},
+  gray:{kn:[0.86,0.96],nc:[1,2],sat:0,sh:0.7,ink:1.0},
+  bw:{sat:0,sh:0,ink:0}};
+function sharpenL(d,w,h,amt){
+  const n=w*h,L=new Uint8Array(n),t=new Uint16Array(n),o=new Uint16Array(n);
+  for(let i=0,p=0;p<n;i+=4,p++)L[p]=(d[i]*77+d[i+1]*150+d[i+2]*29)>>8;
+  for(let pass=0;pass<2;pass++){const s=pass?o:L;
+    for(let y=0;y<h;y++){const r=y*w;for(let x=0;x<w;x++){const a=x?x-1:0,b=x<w-1?x+1:x;t[r+x]=s[r+a]+s[r+x]+s[r+b];}}
+    for(let y=0;y<h;y++){const a=(y?y-1:0)*w,r=y*w,b=(y<h-1?y+1:y)*w;for(let x=0;x<w;x++)o[r+x]=(t[a+x]+t[r+x]+t[b+x])/9;}}
+  for(let i=0,p=0;p<n;i+=4,p++){const dl=L[p]-o[p];if(dl>-2&&dl<2)continue;const v=amt*dl;d[i]+=v;d[i+1]+=v;d[i+2]+=v;}
 }
-function sampleBg(bg,x,y,c){const u=Math.min(bg.sw-1,x/bg.f),v=Math.min(bg.sh-1,y/bg.f);const x0=u|0,y0=v|0,x1=Math.min(x0+1,bg.sw-1),y1=Math.min(y0+1,bg.sh-1),fx=u-x0,fy=v-y0;const s=bg.bl[c];
-  const a=s[y0*bg.sw+x0]+(s[y0*bg.sw+x1]-s[y0*bg.sw+x0])*fx,b=s[y1*bg.sw+x0]+(s[y1*bg.sw+x1]-s[y1*bg.sw+x0])*fx;return a+(b-a)*fy;}
-function percentiles(hist,total,lo,hi){let acc=0,l=0,h=255;for(let i=0;i<256;i++){acc+=hist[i];if(acc>=total*lo){l=i;break;}}acc=0;for(let i=255;i>=0;i--){acc+=hist[i];if(acc>=total*(1-hi)){h=i;break;}}if(h-l<30){l=Math.max(0,l-15);h=Math.min(255,h+15);}return [l,h];}
-function applyFilter(d,w,h,filter,bright,contrast){
+function bwThreshold(d,w,h){
+  const n=w*h,I=new Uint32Array((w+1)*(h+1));
+  for(let y=1;y<=h;y++){let row=0;for(let x=1;x<=w;x++){row+=d[((y-1)*w+(x-1))*4];I[y*(w+1)+x]=I[(y-1)*(w+1)+x]+row;}}
+  const r=Math.max(6,Math.round(Math.max(w,h)/50));
+  for(let y=0;y<h;y++){const y0=Math.max(0,y-r),y1=Math.min(h,y+r+1);for(let x=0;x<w;x++){const x0=Math.max(0,x-r),x1=Math.min(w,x+r+1);
+    const mean=(I[y1*(w+1)+x1]-I[y0*(w+1)+x1]-I[y1*(w+1)+x0]+I[y0*(w+1)+x0])/((y1-y0)*(x1-x0));const i=(y*w+x)*4,v=d[i];
+    const t=mean<190?mean*1.08:mean>215?Math.min(mean*0.88,174):mean*(1.08-0.18*(mean-190)/25);let o=v<60?0:(v-(t-10))*255/20;d[i]=d[i+1]=d[i+2]=o;}}
+}
+function applyFilter(d,w,h,filter,bright,contrast,sat2){
   const n=w*h;
-  if(filter==="auto"||filter==="gray"||filter==="bw"){
-    const bg=background(d,w,h);
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;for(let c=0;c<3;c++){const b=sampleBg(bg,x,y,c);const v=d[i+c]*255/Math.max(b,40);d[i+c]=v>255?255:v;}}
+  if(filter!=="original"){
+    const R=RECIPE[filter]||RECIPE.auto;
+    const pm=paperMap(d,w,h);
+    if(R.global&&!pm.global){for(let k=0;k<3;k++){const s=Float32Array.from(pm.E[k]).sort();pm.E[k].fill(s[Math.floor(s.length*0.97)]);}pm.global=true;}
+    if(pm.global){const e=pm.E.map(a=>a[0]),s=e[0]+e[1]+e[2],ch=Math.max(...e.map(v=>Math.abs(v/s-1/3)));
+      if(ch>0.05){const l=e[0]*.2126+e[1]*.7152+e[2]*.0722;for(let k=0;k<3;k++)pm.E[k].fill(l);}}
+    const f=flareLevel(d,n,pm),{gw,gh,cs,E}=pm;
+    const kn=R.kn,nc=R.nc,sat=R.sat,ik=R.ink||0;
+    const X0=new Int32Array(w),X1=new Int32Array(w),FX=new Float32Array(w);
+    for(let x=0;x<w;x++){let u=x/cs-0.5;u=u<0?0:u>gw-1?gw-1:u;X0[x]=u|0;X1[x]=Math.min(X0[x]+1,gw-1);FX[x]=u-X0[x];}
+    const rowE=[new Float32Array(gw),new Float32Array(gw),new Float32Array(gw)],f0=f[0],f1=f[1],f2=f[2];
+    const k0=kn?kn[0]:2,k1=kn?kn[1]:3,n0=kn?nc[0]:0,n1=kn?nc[1]:1;
+    for(let y=0;y<h;y++){let v=y/cs-0.5;v=v<0?0:v>gh-1?gh-1:v;const y0=v|0,y1=Math.min(y0+1,gh-1),fy=v-y0;
+      for(let k=0;k<3;k++){const M=E[k],o=rowE[k],fk=f[k];for(let gx=0;gx<gw;gx++){const p=M[y0*gw+gx]+(M[y1*gw+gx]-M[y0*gw+gx])*fy;o[gx]=1/Math.max(1e-4,p-fk);}}
+      const e0=rowE[0],e1=rowE[1],e2=rowE[2];
+      for(let x=0,i=y*w*4;x<w;x++,i+=4){const a=X0[x],b=X1[x],fx=FX[x];
+        let r=toG((LIN[d[i]]-f0)*(e0[a]+(e0[b]-e0[a])*fx)),g=toG((LIN[d[i+1]]-f1)*(e1[a]+(e1[b]-e1[a])*fx)),bb=toG((LIN[d[i+2]]-f2)*(e2[a]+(e2[b]-e2[a])*fx));
+        let l=(r*.299+g*.587+bb*.114)/255;
+        if(ik&&l<0.95){const C0=(Math.max(r,g,bb)-Math.min(r,g,bb))/255,q=ik*(1-ss(0.08,0.22,C0));if(q>0){const nl=Math.pow(l,1+q*(1-l)),m=l>0.004?nl/l:1;r*=m;g*=m;bb*=m;l=nl;}}
+        if(sat!==1){const L8=l*255;r=L8+(r-L8)*sat;g=L8+(g-L8)*sat;bb=L8+(bb-L8)*sat;}
+        if(l>k0){const C=(Math.max(r,g,bb)-Math.min(r,g,bb))/255,t=ss(k0,k1,l)*(1-ss(n0,n1,C));if(t>0){r+=(255-r)*t;g+=(255-g)*t;bb+=(255-bb)*t;}}
+        d[i]=r;d[i+1]=g;d[i+2]=bb;}}
+    if(R.sh)sharpenL(d,w,h,R.sh);
+    if(filter==="bw")bwThreshold(d,w,h);
   }
-  if(filter==="gray"||filter==="bw"){for(let i=0;i<n*4;i+=4){const g=d[i]*.299+d[i+1]*.587+d[i+2]*.114;d[i]=d[i+1]=d[i+2]=g;}}
-  if(filter==="auto"||filter==="gray"||filter==="enhance"){
-    const hist=new Uint32Array(256);for(let i=0;i<n*4;i+=4){hist[(d[i]*.299+d[i+1]*.587+d[i+2]*.114)|0]++;}
-    const [lo,hi]=percentiles(hist,n,filter==="enhance"?0.005:0.02,filter==="enhance"?0.995:0.985);
-    const k=255/(hi-lo);const sat=filter==="enhance"?1.25:(filter==="auto"?1.15:1);
-    for(let i=0;i<n*4;i+=4){let r=(d[i]-lo)*k,g=(d[i+1]-lo)*k,b=(d[i+2]-lo)*k;
-      if(sat!==1){const l=r*.299+g*.587+b*.114;r=l+(r-l)*sat;g=l+(g-l)*sat;b=l+(b-l)*sat;}
-      d[i]=r<0?0:r>255?255:r;d[i+1]=g<0?0:g>255?255:g;d[i+2]=b<0?0:b>255?255:b;}
-  }
-  if(filter==="bw"){ // Bradley adaptive threshold on the flattened gray image
-    const I=new Float64Array((w+1)*(h+1));
-    for(let y=1;y<=h;y++){let row=0;for(let x=1;x<=w;x++){row+=d[((y-1)*w+(x-1))*4];I[y*(w+1)+x]=I[(y-1)*(w+1)+x]+row;}}
-    const r=Math.max(8,Math.round(Math.max(w,h)/40)),t=0.86;
-    for(let y=0;y<h;y++){const y0=Math.max(0,y-r),y1=Math.min(h,y+r+1);for(let x=0;x<w;x++){const x0=Math.max(0,x-r),x1=Math.min(w,x+r+1);
-      const sum=I[y1*(w+1)+x1]-I[y0*(w+1)+x1]-I[y1*(w+1)+x0]+I[y0*(w+1)+x0];const mean=sum/((y1-y0)*(x1-x0));const i=(y*w+x)*4;
-      const v=d[i]<mean*t?0:255;d[i]=d[i+1]=d[i+2]=v;}}
-  }
+  if(sat2){const s2=1+sat2/100;for(let i=0;i<n*4;i+=4){const l=d[i]*.299+d[i+1]*.587+d[i+2]*.114;d[i]=l+(d[i]-l)*s2;d[i+1]=l+(d[i+1]-l)*s2;d[i+2]=l+(d[i+2]-l)*s2;}}
   if(bright||contrast){const c=(259*(contrast+255))/(255*(259-contrast));for(let i=0;i<n*4;i+=4){for(let k=0;k<3;k++){let v=c*(d[i+k]-128)+128+bright;d[i+k]=v<0?0:v>255?255:v;}}}
   return d;
 }
@@ -896,7 +967,7 @@ self.onmessage=e=>{const m=e.data;
   try{
     const img={data:new Uint8ClampedArray(m.buf),width:m.w,height:m.h};
     if(m.op==="warp"){const out=warp(img,m.w,m.h,m.corners,m.ow,m.oh);self.postMessage({id:m.id,ok:true,data:out.buffer,w:m.ow,h:m.oh},[out.buffer]);}
-    else if(m.op==="filter"){const d=applyFilter(img.data,m.w,m.h,m.filter,m.bright|0,m.contrast|0);self.postMessage({id:m.id,ok:true,data:d.buffer,w:m.w,h:m.h},[d.buffer]);}
+    else if(m.op==="filter"){const d=applyFilter(img.data,m.w,m.h,m.filter,m.bright|0,m.contrast|0,m.sat|0);self.postMessage({id:m.id,ok:true,data:d.buffer,w:m.w,h:m.h},[d.buffer]);}
   }catch(err){self.postMessage({id:m.id,ok:false,error:String(err&&err.message||err)});}
 };`;
 let _worker,_wid=0;const _pending={};
@@ -911,7 +982,7 @@ function warpImageData(img,corners){
   const buf=img.data.buffer;
   return wcall({op:"warp",buf,w:img.width,h:img.height,corners,ow,oh},[buf]);
 }
-function filterImageData(img,filter,bright,contrast){if(filter==="original"&&!bright&&!contrast)return Promise.resolve(img);const buf=img.data.buffer;return wcall({op:"filter",buf,w:img.width,h:img.height,filter,bright,contrast},[buf]);}
+function filterImageData(img,filter,bright,contrast,sat){if(filter==="original"&&!bright&&!contrast&&!sat)return Promise.resolve(img);const buf=img.data.buffer;return wcall({op:"filter",buf,w:img.width,h:img.height,filter,bright,contrast,sat},[buf]);}
 
 /* =====================================================================
    OpenCV loader + document edge detection
@@ -1109,7 +1180,7 @@ async function renderPage(page){
   let img=await bitmapToImageData(bm,2600);
   const sx=img.width/bmW(bm);
   if(page.corners){const c=page.corners.map(p=>[p[0]*sx,p[1]*sx]);img=await warpImageData(img,c);}
-  img=await filterImageData(img,page.filter||"original",page.bright|0,page.contrast|0);
+  img=await filterImageData(img,page.filter||"original",page.bright|0,page.contrast|0,page.sat|0);
   let c=imageDataToCanvas(img);c=rotateCanvas(c,page.rot|0);
   page.proc=await canvasToBlob(c,"image/jpeg",0.9);page.thumb=await thumbFromCanvas(c,300);page.pw=c.width;page.ph=c.height;
   page.ocr=null;page.ocrWords=null; // text must be re-read after the image changes
@@ -1118,7 +1189,7 @@ async function renderPage(page){
 }
 async function newPage(docId,origBlob,opts){
   const bm=await blobToBitmap(origBlob);const w=bmW(bm),h=bmH(bm);if(bm.close)bm.close();
-  return Object.assign({id:uid(),docId,order:0,orig:origBlob,w,h,corners:null,rot:0,filter:settings.filter,bright:0,contrast:0,proc:null,thumb:null,ocr:null,ocrWords:null,created:Date.now()},opts||{});
+  return Object.assign({id:uid(),docId,order:0,orig:origBlob,w,h,corners:null,rot:0,filter:settings.filter,bright:0,contrast:0,sat:0,proc:null,thumb:null,ocr:null,ocrWords:null,created:Date.now()},opts||{});
 }
 async function ensureDoc(docId,name){let d=docId?await Store.getDoc(docId):null;if(!d){d={id:uid(),name:name||scanName(),created:Date.now(),updated:Date.now(),pages:0,thumb:null};await Store.putDoc(d);}return d;}
 async function refreshDocMeta(docId){const d=await Store.getDoc(docId);if(!d)return;const pages=await Store.pagesOf(docId);d.pages=pages.length;d.thumb=pages.length?pages[0].thumb:null;d.text=pages.map(p=>p.ocr||"").join("\n").trim();await Store.putDoc(d);return d;}
@@ -1416,7 +1487,7 @@ window.addEventListener("resize",()=>{if($("cropStage").classList.contains("show
    EDITOR
 ===================================================================== */
 const ed={doc:null,pages:[],idx:0,filterCache:{},busy:0};
-const FILTERS=[["auto","Auto"],["original","Original"],["enhance","Colour+"],["gray","Grayscale"],["bw","B&W"]];
+const FILTERS=[["auto","Auto"],["original","Original"],["enhance","Magic colour"],["photo","Photo"],["white","Whiteboard"],["gray","Grayscale"],["bw","B&W"]];
 function curPage(){return ed.pages[ed.idx]||null;}
 function showScreen(id){$$(".screen").forEach(s=>s.classList.toggle("active",s.id===id));const isLib=id==="scrLib";$("fab").hidden=!isLib;$("actbar").hidden=isLib;if(!isLib){document.body.classList.remove("selmode");$("selBar").hidden=true;}window.scrollTo(0,0);}
 async function openEditor(docId){
@@ -1432,7 +1503,7 @@ function renderPreview(){
   if(p.proc){const u=URL.createObjectURL(p.proc);const old=img.dataset.u;img.onload=()=>{if(old)URL.revokeObjectURL(old);};img.src=u;img.dataset.u=u;}
   img.style.filter="";
   $("pvIdx").textContent=`${ed.idx+1} / ${ed.pages.length}`;$("pvPrev").style.display=ed.pages.length>1?"":"none";$("pvNext").style.display=ed.pages.length>1?"":"none";
-  $("adjB").value=p.bright|0;$("adjC").value=p.contrast|0;$("adjBo").value=p.bright|0;$("adjCo").value=p.contrast|0;
+  $("adjB").value=p.bright|0;$("adjC").value=p.contrast|0;$("adjS").value=p.sat|0;$("adjBo").value=p.bright|0;$("adjCo").value=p.contrast|0;$("adjSo").value=p.sat|0;
   $$("#filters button").forEach(b=>b.classList.toggle("on",b.dataset.f===(p.filter||"original")));
   $("tOcr").classList.toggle("on",!!p.ocr);
 }
@@ -1490,10 +1561,10 @@ $("docName").addEventListener("keydown",e=>{if(e.key==="Enter")e.target.blur();}
 /* tools */
 $("tRot").onclick=async()=>{const p=curPage();if(!p)return;p.rot=((p.rot|0)+90)%360;await rerender(p,"Rotating…");};
 $("tAdj").onclick=()=>{$("adj").classList.toggle("show");$("tAdj").classList.toggle("on",$("adj").classList.contains("show"));};
-function adjPreview(){const b=+$("adjB").value,c=+$("adjC").value;$("adjBo").value=b;$("adjCo").value=c;$("pvImg").style.filter=`brightness(${1+b/200}) contrast(${1+c/100})`;}
-$("adjB").oninput=adjPreview;$("adjC").oninput=adjPreview;
-$("adjReset").onclick=async()=>{const p=curPage();$("adjB").value=0;$("adjC").value=0;adjPreview();if(p&&(p.bright||p.contrast)){p.bright=0;p.contrast=0;await rerender(p,"Resetting…");}};
-$("adjApply").onclick=async()=>{const p=curPage();if(!p)return;const b=+$("adjB").value,c=+$("adjC").value;if(b===(p.bright|0)&&c===(p.contrast|0)){$("pvImg").style.filter="";return;}p.bright=b;p.contrast=c;await rerender(p,"Applying…");};
+function adjPreview(){const b=+$("adjB").value,c=+$("adjC").value,sa=+$("adjS").value;$("adjBo").value=b;$("adjCo").value=c;$("adjSo").value=sa;$("pvImg").style.filter=`brightness(${1+b/200}) contrast(${1+c/100}) saturate(${1+sa/100})`;}
+$("adjB").oninput=adjPreview;$("adjC").oninput=adjPreview;$("adjS").oninput=adjPreview;
+$("adjReset").onclick=async()=>{const p=curPage();$("adjB").value=0;$("adjC").value=0;$("adjS").value=0;adjPreview();if(p&&(p.bright||p.contrast||p.sat)){p.bright=0;p.contrast=0;p.sat=0;await rerender(p,"Resetting…");}};
+$("adjApply").onclick=async()=>{const p=curPage();if(!p)return;const b=+$("adjB").value,c=+$("adjC").value,sa=+$("adjS").value;if(b===(p.bright|0)&&c===(p.contrast|0)&&sa===(p.sat|0)){$("pvImg").style.filter="";return;}p.bright=b;p.contrast=c;p.sat=sa;await rerender(p,"Applying…");};
 $("tCrop").onclick=async()=>{const p=curPage();if(!p)return;
   const r=await cropDialog(p.orig,p.corners||fullCorners(p.w,p.h),{okText:"Apply"});if(!r)return;
   if(r.retake){return retakePage(p);}
@@ -1560,7 +1631,7 @@ $("ocrShare").onclick=async()=>{const p=curPage();if(!p||!p.ocr)return toast("No
 ===================================================================== */
 const ex={docId:null,doc:null,pages:[],fromEditor:false,last:null};
 const PAGE_MM={a4:[210,297],letter:[215.9,279.4],legal:[215.9,355.6]};
-const QUALITY={small:{max:1400,q:0.6},balanced:{max:2000,q:0.78},high:{max:2600,q:0.9}};
+const QUALITY={small:{max:1400,q:0.62},balanced:{max:2200,q:0.82},high:{max:2600,q:0.92}};
 async function openExport(o){
   ex.docId=o.docId;ex.doc=await Store.getDoc(o.docId);ex.pages=await Store.pagesOf(o.docId);ex.fromEditor=$("scrEdit").classList.contains("active");ex.last=null;
   if(!ex.pages.length)return toast("This document has no pages");
@@ -1607,7 +1678,7 @@ async function buildText(pages,onProg){let t=[];for(let i=0;i<pages.length;i++){
 /* Build whatever the sheet asks for → {files:[File], kind} */
 async function buildExport(){
   const fmt=segVal("exFmt");const pages=selectedPages();const name=safeName($("exName").value||ex.doc.name);
-  if(ex.last&&ex.last.key===JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.proc&&p.proc.size)).join()]))return ex.last;
+  if(ex.last&&ex.last.key===JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]))return ex.last;
   const busy=b=>{$("exShare").disabled=$("exDownload").disabled=$("exPrint").disabled=b;};busy(true);
   try{
     let files=[],kind=fmt;
@@ -1617,7 +1688,7 @@ async function buildExport(){
     else{const blobs=await buildImages(pages,fmt,exProgress);files=blobs.map((b,i)=>new File([b],name+(blobs.length>1?` p${i+1}`:"")+(fmt==="png"?".png":".jpg"),{type:b.type}));}
     exProgress(1,`Ready · ${fmtBytes(files.reduce((a,f)=>a+f.size,0))}`);
     if(fmt==="pdf")ex.doc.lastPdfSize=files[0].size;
-    ex.last={key:JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.proc&&p.proc.size)).join()]),files,kind,name};
+    ex.last={key:JSON.stringify([fmt,segVal("exSize"),segVal("exQ"),$("exOcr").checked,$("exPwOn").checked&&$("exPw").value,segVal("exPages"),name,pages.map(p=>p.id+p.filter+p.rot+p.bright+p.contrast+(p.sat|0)+(p.proc&&p.proc.size)).join()]),files,kind,name};
     return ex.last;
   }catch(e){toast("Export failed: "+e.message,4000);$("exProgTxt").textContent="Failed: "+e.message;return null;}
   finally{busy(false);}

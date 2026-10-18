@@ -1,4 +1,4 @@
-# IBI ScannerC v2.5.3
+# IBI ScannerC v2.6.0
 
 Scan documents with your phone, the way Google Scan and Adobe Scan do — in the browser, with nothing uploaded.
 
@@ -36,6 +36,7 @@ Badge (`versionTag`), `ibi-build` meta, footer, `service-worker.js` `CACHE_VERSI
 
 ## Changelog
 
+- **v2.6.0 (18 Oct 2026)** — true-colour scanning engine. The paper is found by its tint and brightness only, so coloured bands, photos and pale boxes keep their real colour; light and colour cast are evened out in linear light; camera glare is removed so ink is black and colours regain their real strength; paper is cleaned to white only where it is neutral; text is sharpened. New filters Magic colour, Photo and Whiteboard; B&W keeps white lettering on coloured bands; Colour slider in Adjust; higher PDF image quality; edge to edge on every screen size. Measured on a colour test sheet: average colour error (ΔE) 25 → 4–7.
 - **v2.5.3 (11 Oct 2026)** — long words wrap only where they would overflow (break-word instead of anywhere, so buttons and switches keep whole words on phones).
 - **v2.5.2 (11 Oct 2026)** — phones edge to edge: no outer gutter, full-bleed flat boxes, 10px inner side padding, the page never wider than the screen.
 - **v2.5.1 (26 Sep 2026)** — inside an installed copy, Settings offers *Reinstall* with steps (an old copy restored from a previous phone opens with an address bar).
