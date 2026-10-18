@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.6.2">
+<meta name="ibi-build" content="v2.6.3">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -232,7 +232,8 @@
   #cropSvg circle.m.act{r:11;fill:#fff;stroke:var(--accent)}
   #loupe{position:absolute;width:130px;height:130px;border-radius:50%;border:3px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.6);display:none;pointer-events:none;background:#000;overflow:hidden;z-index:5}
   #loupe canvas{width:100%;height:100%;display:block}
-  .cropbtns{display:flex;justify-content:space-between;gap:6px;align-items:center;flex-wrap:wrap}
+  .cropbtns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-items:stretch}
+  .cropbtns .sbtn{flex-direction:column;height:auto;min-height:58px;padding:6px 2px;gap:3px;font-size:calc(13px*var(--ts));min-width:0}   /* v2.6.3: one even row, Apply never wraps to a second line */
 
   /* ---------- editor ---------- */
   .edtop{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
@@ -257,7 +258,7 @@
   .filters button .sw img{width:100%;height:100%;object-fit:cover;display:block}
   .filters button.on{color:var(--accent)}
   .filters button.on .sw{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
-  .toolbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding:4px 0}
+  .toolbar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:4px 0}
   .toolbar .tool{min-width:0;padding:8px 2px}
   .toolbar::-webkit-scrollbar{display:none}
   .adj{display:none;padding:8px 4px 0}
@@ -265,7 +266,25 @@
      phone it was off-screen. Like Adobe Scan / Microsoft Lens / CamScanner, the filters and tools (Crop first) now stay
      pinned on screen just above Add page / Share, and the page preview is sized to fit above them. */
   .edtools{position:sticky;bottom:var(--abh);z-index:30;background:var(--bg);border-top:1px solid var(--border);box-shadow:0 -6px 18px rgba(0,0,0,.25)}
-  .preview img{max-height:max(240px,calc(100dvh - var(--abh) - 356px))}
+  /* v2.6.3 (CEO: "the scanned document should fill the entire phone or at least 85%"): the page view opens at the top of
+     the screen (the app header scrolls out of the way), the page fills the full width and the height down to the tool row,
+     and the filter strip opens from a Filters button (like Microsoft Lens / Adobe Scan). Tap the page for a full-screen
+     viewer with pinch and double-tap zoom. */
+  .preview{min-height:max(260px,calc(100dvh - var(--abh) - 118px));border-top:0;border-bottom:0}
+  .preview img{max-width:100%;max-height:max(240px,calc(100dvh - var(--abh) - 122px));cursor:zoom-in}
+  body.editing header{position:relative}   /* in a document the app header scrolls away so the page gets the screen */
+  .edtools .filters{display:none}
+  .edtools.fltOn .filters{display:flex}
+  .preview .nav.zm{top:8px;right:8px;transform:none}
+  .viewer{position:fixed;inset:0;z-index:260;background:#000;display:none;touch-action:none;overflow:hidden;user-select:none;-webkit-user-select:none}
+  .viewer.show{display:block}
+  #vwImg{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;max-height:none;will-change:transform;pointer-events:none;-webkit-user-drag:none}
+  .viewer .vtop{position:absolute;left:0;right:0;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:calc(8px + var(--sat)) 8px 8px;background:linear-gradient(rgba(0,0,0,.75),transparent);color:#fff}
+  .viewer .vtop .ttl{flex:1;text-align:center;font-family:var(--mono);font-size:calc(14px*var(--ts))}
+  .viewer .nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.55);border:0;color:#fff;display:flex;align-items:center;justify-content:center}
+  .viewer .nav svg{width:24px;height:24px}
+  .viewer .nav.l{left:8px}.viewer .nav.r{right:8px}
+  .viewer .vhint{position:absolute;left:50%;bottom:calc(18px + var(--sab));transform:translateX(-50%);z-index:2;background:rgba(0,0,0,.65);color:#fff;padding:7px 14px;border-radius:999px;font-size:calc(13px*var(--ts));white-space:nowrap;transition:opacity .5s;pointer-events:none}
   .adj.show{display:block}
   .edtools.adjOn .filters{display:none}   /* Adjust takes the filter strip's place, so the page stays in view */
   .adj .row{flex-wrap:nowrap;align-items:center}
@@ -395,12 +414,13 @@
   <symbol id="i-drive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 3h7l6 10.5-3.5 6h-12l-3.5-6z"/><path d="M8.5 3 2.5 13.5h7L15.5 3"/><path d="M21.5 13.5h-12l-3.5 6"/></symbol>
   <symbol id="i-install" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3"/><path d="M10 18h4"/></symbol>
   <symbol id="i-id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2.5"/><path d="M14 10h5M14 14h5"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><circle cx="15" cy="9" r="6"/><circle cx="12" cy="15" r="6"/></symbol>
   <symbol id="i-zoom" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M8 11h6M11 8v6"/></symbol>
 </svg>
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.6.2</span>
+    <span class="version" id="versionTag">v2.6.3</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -447,6 +467,7 @@
       <div>
         <div class="preview" id="preview">
           <img id="pvImg" alt="Scanned page">
+          <button class="nav zm" id="pvZoom" title="Full screen — pinch or double-tap to zoom"><svg><use href="#i-zoom"/></svg></button>
           <button class="nav l" id="pvPrev" title="Previous page"><svg><use href="#i-back"/></svg></button>
           <button class="nav r" id="pvNext" title="Next page"><svg><use href="#i-fwd"/></svg></button>
           <div class="pgi" id="pvIdx">1 / 1</div>
@@ -461,6 +482,7 @@
           <div class="row" style="justify-content:flex-end"><button class="btn sm" id="adjReset">Reset</button><button class="btn sm primary" id="adjApply">Apply</button></div>
         </div>
         <div class="toolbar">
+          <button class="tool" id="tFlt" title="Filters: Auto, Magic colour, Photo, B&amp;W…"><svg><use href="#i-filter"/></svg>Filters</button>
           <button class="tool" id="tCrop" title="Crop: drag the corners and sides"><svg><use href="#i-crop"/></svg>Crop</button>
           <button class="tool" id="tRot" title="Rotate 90°"><svg><use href="#i-rot"/></svg>Rotate</button>
           <button class="tool" id="tAdj" title="Brightness, contrast and colour"><svg><use href="#i-adj"/></svg>Adjust</button>
@@ -481,7 +503,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.6.2</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.6.3</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -539,6 +561,19 @@
       <button class="btn primary" id="camDone"><svg><use href="#i-check"/></svg><span id="camDoneTxt">Done</span></button>
     </div>
   </div>
+</div>
+
+<!-- ================= PAGE VIEWER (pinch / double-tap zoom) ================= -->
+<div class="viewer" id="viewer" role="dialog" aria-label="Page viewer">
+  <img id="vwImg" alt="Scanned page, zoomable">
+  <div class="vtop">
+    <button class="sbtn" id="vwClose" title="Close"><svg><use href="#i-x"/></svg></button>
+    <div class="ttl" id="vwTtl">1 / 1</div>
+    <button class="sbtn" id="vwFit" title="Fit to screen"><svg><use href="#i-flip"/></svg></button>
+  </div>
+  <button class="nav l" id="vwPrev" title="Previous page"><svg><use href="#i-back"/></svg></button>
+  <button class="nav r" id="vwNext" title="Next page"><svg><use href="#i-fwd"/></svg></button>
+  <div class="vhint" id="vwHint">Pinch or double-tap to zoom · swipe down to close</div>
 </div>
 
 <!-- ================= CROP ================= -->
@@ -674,7 +709,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.6.2</b></div>
+      <div class="kv"><span>Version</span><b>v2.6.3</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -711,7 +746,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.6.2";
+const APP_VERSION="v2.6.3";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -1513,8 +1548,10 @@ cropMidEl.addEventListener("pointerdown",e=>{
   if(e.button>0||!crop.pts||crop.drag)return;
   const r=cropWrap.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,s=crop.scale,P=crop.pts.map(p=>[p[0]*s,p[1]*s]);
   let best=null,bs=1e9;
-  for(let i=0;i<4;i++){const d=Math.hypot(P[i][0]-x,P[i][1]-y);if(d<=48&&d*0.8<bs){bs=d*0.8;best={c:i,m:null};}
-    const a=P[i],b=P[(i+1)%4],dm=Math.hypot((a[0]+b[0])/2-x,(a[1]+b[1])/2-y);if(dm<=40&&dm<bs){bs=dm;best={c:null,m:i};}}
+  /* v2.6.3 (CEO: "wherever we touch on the screen the round portion should move"): a touch ANYWHERE on the photo takes
+     the nearest handle (corners slightly favoured) and it follows the finger from there — no need to hit the small dot. */
+  for(let i=0;i<4;i++){const d=Math.hypot(P[i][0]-x,P[i][1]-y);if(d*0.8<bs){bs=d*0.8;best={c:i,m:null};}
+    const a=P[i],b=P[(i+1)%4],dm=Math.hypot((a[0]+b[0])/2-x,(a[1]+b[1])/2-y);if(dm<bs){bs=dm;best={c:null,m:i};}}
   if(!best)return;
   loupe.dataset.side="";
   crop.drag={c:best.c,m:best.m,sx:e.clientX,sy:e.clientY,pts:crop.pts.map(q=>q.slice()),id:e.pointerId,last:null,raf:0};
@@ -1578,13 +1615,15 @@ window.addEventListener("resize",()=>{if($("cropStage").classList.contains("show
 const ed={doc:null,pages:[],idx:0,filterCache:{},busy:0};
 const FILTERS=[["auto","Auto"],["original","Original"],["enhance","Magic colour"],["photo","Photo"],["white","Whiteboard"],["gray","Grayscale"],["bw","B&W"]];
 function curPage(){return ed.pages[ed.idx]||null;}
-function showScreen(id){$$(".screen").forEach(s=>s.classList.toggle("active",s.id===id));const isLib=id==="scrLib";$("fab").hidden=!isLib;$("actbar").hidden=isLib;if(!isLib){document.body.classList.remove("selmode");$("selBar").hidden=true;}window.scrollTo(0,0);}
+function showScreen(id){$$(".screen").forEach(s=>s.classList.toggle("active",s.id===id));document.body.classList.toggle("editing",id==="scrEdit");const isLib=id==="scrLib";$("fab").hidden=!isLib;$("actbar").hidden=isLib;if(!isLib){document.body.classList.remove("selmode");$("selBar").hidden=true;}window.scrollTo(0,0);}
 async function openEditor(docId){
   const d=await Store.getDoc(docId);if(!d){toast("Document not found");return showLibrary();}
   ed.doc=d;ed.pages=await Store.pagesOf(docId);ed.idx=clamp(ed.idx,0,Math.max(0,ed.pages.length-1));ed.filterCache={};
   if(!ed.pages.length){await Store.delDoc(docId);toast("That document had no pages");return showLibrary();}
   $("docName").value=d.name;location.hash="#/doc/"+docId;showScreen("scrEdit");$("adj").classList.remove("show");
+  $("edTools").classList.remove("adjOn","fltOn");$("tAdj").classList.remove("on");$("tFlt").classList.remove("on");
   renderEditor();
+  setTimeout(()=>{const y=$("scrEdit").getBoundingClientRect().top+window.scrollY;if(y>0)window.scrollTo(0,y);},0);   /* the page view takes the screen; the app header is one scroll up */
 }
 function renderEditor(){renderPreview();renderPagesGrid();renderFilterChips();}
 function renderPreview(){
@@ -1641,6 +1680,48 @@ async function renderFilterChips(){
 async function applyFilterTo(p,f){if(p.filter===f)return;p.filter=f;$$("#filters button").forEach(b=>b.classList.toggle("on",b.dataset.f===f));await rerender(p,"Applying "+f+"…");}
 $("pvPrev").onclick=()=>{ed.idx=(ed.idx-1+ed.pages.length)%ed.pages.length;renderEditor();};
 $("pvNext").onclick=()=>{ed.idx=(ed.idx+1)%ed.pages.length;renderEditor();};
+/* Full-screen page viewer (v2.6.3): tap the page (or the magnifier) to check it closely. Pinch or double-tap to zoom,
+   drag to move around, swipe left/right at normal size for the next page, swipe down or the close button to close. */
+const vw={s:1,fit:1,x:0,y:0,iw:0,ih:0,pts:new Map(),pinch:null,pan:null,lastTap:0,ht:0};
+const vwEl=$("viewer"),vwImg=$("vwImg");
+function vwApply(){vwImg.style.transform="translate("+vw.x+"px,"+vw.y+"px) scale("+vw.s+")";}
+function vwClamp(){const W=vwEl.clientWidth,H=vwEl.clientHeight,w=vw.iw*vw.s,h=vw.ih*vw.s;
+  vw.x=w<=W?(W-w)/2:clamp(vw.x,W-w,0);vw.y=h<=H?(H-h)/2:clamp(vw.y,H-h,0);}
+function vwFit(){if(!vw.iw)return;vw.fit=Math.min(vwEl.clientWidth/vw.iw,vwEl.clientHeight/vw.ih);vw.s=vw.fit;vwClamp();vwApply();}
+function vwZoomAt(ns,cx,cy){ns=clamp(ns,vw.fit,vw.fit*8);const k=ns/vw.s;vw.x=cx-(cx-vw.x)*k;vw.y=cy-(cy-vw.y)*k;vw.s=ns;vwClamp();vwApply();}
+function openViewer(){const p=curPage();if(!p||!p.proc)return;
+  const u=URL.createObjectURL(p.proc),old=vwImg.dataset.u;
+  vwImg.onload=()=>{vw.iw=vwImg.naturalWidth;vw.ih=vwImg.naturalHeight;vwFit();if(old)URL.revokeObjectURL(old);};vwImg.src=u;vwImg.dataset.u=u;
+  $("vwTtl").textContent=(ed.idx+1)+" / "+ed.pages.length;$("vwPrev").style.display=$("vwNext").style.display=ed.pages.length>1?"":"none";
+  if(!vwEl.classList.contains("show")){vwEl.classList.add("show");document.body.classList.add("lock");const h=$("vwHint");h.style.opacity="1";clearTimeout(vw.ht);vw.ht=setTimeout(()=>{h.style.opacity="0";},2600);}
+}
+function closeViewer(){vwEl.classList.remove("show");vw.pts.clear();vw.pinch=vw.pan=null;if(!openSheets.length&&!document.querySelector(".stage.show"))document.body.classList.remove("lock");}
+function vwStep(d){if(ed.pages.length<2)return;ed.idx=(ed.idx+d+ed.pages.length)%ed.pages.length;renderEditor();openViewer();}
+vwEl.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;try{vwEl.setPointerCapture(e.pointerId);}catch(_){}
+  vw.pts.set(e.pointerId,[e.clientX,e.clientY]);
+  if(vw.pts.size===2){const [a,b]=[...vw.pts.values()];vw.pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,s:vw.s,cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2,x:vw.x,y:vw.y};vw.pan=null;}
+  else if(vw.pts.size===1)vw.pan={sx:e.clientX,sy:e.clientY,x:vw.x,y:vw.y,moved:false};
+  e.preventDefault();});
+vwEl.addEventListener("pointermove",e=>{if(!vw.pts.has(e.pointerId))return;vw.pts.set(e.pointerId,[e.clientX,e.clientY]);
+  if(vw.pinch&&vw.pts.size>=2){const [a,b]=[...vw.pts.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2;
+    const ns=clamp(vw.pinch.s*d/vw.pinch.d,vw.fit,vw.fit*8),k=ns/vw.pinch.s;vw.s=ns;vw.x=cx-(vw.pinch.cx-vw.pinch.x)*k;vw.y=cy-(vw.pinch.cy-vw.pinch.y)*k;vwClamp();vwApply();}
+  else if(vw.pan){const dx=e.clientX-vw.pan.sx,dy=e.clientY-vw.pan.sy;if(Math.abs(dx)+Math.abs(dy)>8)vw.pan.moved=true;
+    if(vw.s>vw.fit*1.01){vw.x=vw.pan.x+dx;vw.y=vw.pan.y+dy;vwClamp();vwApply();}}});
+const vwUp=e=>{if(!vw.pts.has(e.pointerId))return;vw.pts.delete(e.pointerId);
+  if(vw.pinch){if(vw.pts.size<2)vw.pinch=null;if(vw.pts.size===1){const [a]=[...vw.pts.values()];vw.pan={sx:a[0],sy:a[1],x:vw.x,y:vw.y,moved:true};}return;}
+  const pn=vw.pan;vw.pan=null;if(!pn)return;const dx=e.clientX-pn.sx,dy=e.clientY-pn.sy,atFit=vw.s<=vw.fit*1.01;
+  if(!pn.moved){const now=Date.now();if(now-vw.lastTap<320){vw.lastTap=0;if(!atFit){vw.s=vw.fit;vwClamp();vwApply();}else vwZoomAt(vw.fit*2.5,e.clientX,e.clientY);}else vw.lastTap=now;return;}
+  if(atFit&&Math.abs(dx)>70&&Math.abs(dy)<90)vwStep(dx<0?1:-1);
+  else if(atFit&&dy>110&&Math.abs(dx)<90)closeViewer();};
+vwEl.addEventListener("pointerup",vwUp);vwEl.addEventListener("pointercancel",vwUp);
+vwEl.addEventListener("wheel",e=>{e.preventDefault();vwZoomAt(vw.s*(e.deltaY<0?1.15:1/1.15),e.clientX,e.clientY);},{passive:false});
+$("vwClose").onclick=closeViewer;$("vwFit").onclick=vwFit;$("vwPrev").onclick=()=>vwStep(-1);$("vwNext").onclick=()=>vwStep(1);
+$("pvImg").addEventListener("click",openViewer);$("pvZoom").onclick=openViewer;
+document.addEventListener("keydown",e=>{if(!vwEl.classList.contains("show"))return;const W=vwEl.clientWidth/2,H=vwEl.clientHeight/2;
+  if(e.key==="Escape")closeViewer();else if(e.key==="ArrowRight")vwStep(1);else if(e.key==="ArrowLeft")vwStep(-1);
+  else if(e.key==="+"||e.key==="=")vwZoomAt(vw.s*1.25,W,H);else if(e.key==="-")vwZoomAt(vw.s/1.25,W,H);else return;
+  e.preventDefault();e.stopImmediatePropagation();},true);
+window.addEventListener("resize",()=>{if(vwEl.classList.contains("show"))vwFit();});
 document.addEventListener("keydown",e=>{if(!$("scrEdit").classList.contains("active")||openSheets.length||document.querySelector(".stage.show")||e.target.matches("input,textarea"))return;if(e.key==="ArrowLeft")$("pvPrev").click();if(e.key==="ArrowRight")$("pvNext").click();});
 /* swipe on the preview */
 (()=>{let sx=0,sy=0;const pv=$("preview");pv.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});pv.addEventListener("touchend",e=>{const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>60&&Math.abs(dy)<50&&ed.pages.length>1){dx<0?$("pvNext").click():$("pvPrev").click();}},{passive:true});})();
@@ -1649,7 +1730,8 @@ $("docName").addEventListener("change",async()=>{const v=$("docName").value.trim
 $("docName").addEventListener("keydown",e=>{if(e.key==="Enter")e.target.blur();});
 /* tools */
 $("tRot").onclick=async()=>{const p=curPage();if(!p)return;p.rot=((p.rot|0)+90)%360;await rerender(p,"Rotating…");};
-$("tAdj").onclick=()=>{$("adj").classList.toggle("show");const on=$("adj").classList.contains("show");$("tAdj").classList.toggle("on",on);$("edTools").classList.toggle("adjOn",on);};
+$("tAdj").onclick=()=>{$("adj").classList.toggle("show");const on=$("adj").classList.contains("show");$("tAdj").classList.toggle("on",on);$("edTools").classList.toggle("adjOn",on);if(on){$("edTools").classList.remove("fltOn");$("tFlt").classList.remove("on");}};
+$("tFlt").onclick=()=>{const on=!$("edTools").classList.contains("fltOn");$("edTools").classList.toggle("fltOn",on);$("tFlt").classList.toggle("on",on);if(on){$("adj").classList.remove("show");$("edTools").classList.remove("adjOn");$("tAdj").classList.remove("on");}};
 function adjPreview(){const b=+$("adjB").value,c=+$("adjC").value,sa=+$("adjS").value;$("adjBo").value=b;$("adjCo").value=c;$("adjSo").value=sa;$("pvImg").style.filter=`brightness(${1+b/200}) contrast(${1+c/100}) saturate(${1+sa/100})`;}
 $("adjB").oninput=adjPreview;$("adjC").oninput=adjPreview;$("adjS").oninput=adjPreview;
 $("adjReset").onclick=async()=>{const p=curPage();$("adjB").value=0;$("adjC").value=0;$("adjS").value=0;adjPreview();if(p&&(p.bright||p.contrast||p.sat)){p.bright=0;p.contrast=0;p.sat=0;await rerender(p,"Resetting…");}};
