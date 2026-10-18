@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.8.3">
+<meta name="ibi-build" content="v2.9.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -338,7 +338,9 @@
   .menu button:hover{background:var(--hover)}
   .menu button svg{width:22px;height:22px;color:var(--accent);flex:0 0 auto}
   .menu button.danger,.menu button.danger svg{color:var(--bad)}
-  .sharegrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:6px 0 12px}
+  .sharegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,96px),1fr));gap:8px;margin:6px 0 12px}
+  .sharegrid .wab{position:relative;display:inline-flex}.sharegrid .wab b{position:absolute;right:-6px;bottom:-4px;background:#25d366;color:#fff;border-radius:6px;font-size:10px;line-height:1;padding:2px 3px;font-weight:800}
+  .sharegrid button{overflow-wrap:break-word;text-align:center}
   .sharegrid button{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:12px 4px;color:var(--text);font-size:calc(12px*var(--ts));font-weight:500;min-height:84px}
   .sharegrid button svg{width:28px;height:28px}
   .sharegrid button:hover{border-color:var(--accent)}
@@ -428,7 +430,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.8.3</span>
+    <span class="version" id="versionTag">v2.9.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -512,7 +514,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.8.3</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.9.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -654,12 +656,14 @@
   <div class="sbody">
     <div class="muted small" id="shareToInfo"></div>
     <div class="sharegrid">
-      <button id="stSys"><svg><use href="#i-share"/></svg>Share sheet</button>
       <button id="stWa"><svg style="color:#25d366"><use href="#i-wa"/></svg>WhatsApp</button>
+      <button id="stWab"><span class="wab"><svg style="color:#25d366"><use href="#i-wa"/></svg><b>B</b></span>WhatsApp Business</button>
+      <button id="stDrive"><svg style="color:#fbbc04"><use href="#i-drive"/></svg>Save to Google Drive</button>
       <button id="stMail"><svg style="color:#ea4335"><use href="#i-mail"/></svg>Gmail / Email</button>
-      <button id="stDrive"><svg style="color:#fbbc04"><use href="#i-drive"/></svg>Google Drive</button>
+      <button id="stSys"><svg><use href="#i-share"/></svg>More apps</button>
     </div>
-    <div class="muted small">On a phone, <b>Share sheet</b> lists every app that accepts files — WhatsApp, Gmail, Google Drive, Telegram, Bluetooth and more. The three shortcuts open the same sheet where possible; on a desktop browser the file is downloaded first, then attach it in the app.</div>
+    <div id="stDriveRes" hidden style="margin:-2px 0 12px"></div>
+    <div class="muted small"><b>WhatsApp</b> and <b>WhatsApp Business</b> attach the PDF itself (the file stays private) and open your phone's share list — tap WhatsApp or WhatsApp Business there (Android lets a web app hand a file only to that list). <b>Save to Google Drive</b> uploads straight into your "IBI ScannerC" folder. On a computer the file is downloaded first, then attach it in the app.</div>
   </div>
   <div class="sfoot"><button class="btn" id="stDl"><svg><use href="#i-dl"/></svg>Download instead</button></div>
 </div></div>
@@ -734,7 +738,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.8.3</b></div>
+      <div class="kv"><span>Version</span><b>v2.9.0</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -771,7 +775,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.8.3";
+const APP_VERSION="v2.9.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -2205,20 +2209,45 @@ function printPdf(file){const url=URL.createObjectURL(file);
   fr.onload=()=>{try{fr.contentWindow.focus();fr.contentWindow.print();}catch(e){window.open(url,"_blank");}};}
 /* ---------- Share-to sheet ---------- */
 let shareCtx=null;
-function openShareTo(r){shareCtx=r;const total=fmtBytes(r.files.reduce((a,f)=>a+f.size,0));$("shareToInfo").textContent=r.files.length===1?`${r.files[0].name} · ${total}`:`${r.files.length} files · ${total}`;openSheet("ovShareTo");}
+function openShareTo(r){shareCtx=r;$("stDriveRes").hidden=true;loadGis().catch(()=>{});const total=fmtBytes(r.files.reduce((a,f)=>a+f.size,0));$("shareToInfo").textContent=r.files.length===1?`${r.files[0].name} · ${total}`:`${r.files.length} files · ${total}`;openSheet("ovShareTo");}
 async function shareVia(target){
   const r=shareCtx;if(!r)return;const title=r.name;
+  if(target==="wab"&&navigator.canShare)toast("In the list, tap WhatsApp Business",2500);else if(target==="wa"&&navigator.canShare)toast("In the list, tap WhatsApp",2500);
   const res=await shareFiles(r.files,title,"Scanned with IBI ScannerC");
   if(res==="shared"){closeSheet("ovShareTo");closeSheet("ovExport");toast("Shared");return;}
   if(res==="cancelled")return;
   // Desktop / unsupported: download, then open the target so the user can attach
   await downloadFiles(r);
-  if(target==="wa"){window.open("https://web.whatsapp.com/","_blank","noopener");toast("Attach the downloaded file in WhatsApp (📎 → Document)",5000);}
+  if(target==="wa"||target==="wab"){window.open("https://web.whatsapp.com/","_blank","noopener");toast(`Attach the downloaded file in WhatsApp${target==="wab"?" Business":""} Web (📎 → Document)`,5000);}
   else if(target==="mail"){window.open("https://mail.google.com/mail/?view=cm&fs=1&su="+encodeURIComponent(title)+"&body="+encodeURIComponent("Please find the scanned document attached."),"_blank","noopener");toast("Attach the downloaded file in the Gmail window (📎)",5000);}
   else if(target==="drive"){window.open("https://drive.google.com/drive/my-drive","_blank","noopener");toast("In Drive click New → File upload and pick the downloaded file",5000);}
   else toast("This browser cannot share files directly — the file was downloaded instead",4000);
 }
-$("stSys").onclick=()=>shareVia("sys");$("stWa").onclick=()=>shareVia("wa");$("stMail").onclick=()=>shareVia("mail");$("stDrive").onclick=()=>shareVia("drive");
+$("stSys").onclick=()=>shareVia("sys");$("stWa").onclick=()=>shareVia("wa");$("stWab").onclick=()=>shareVia("wab");$("stMail").onclick=()=>shareVia("mail");$("stDrive").onclick=()=>saveToDrive();
+/* v2.9.0 (CEO: "GDrive to upload the scanned PDF"): one tap saves the exported file(s) straight into the "IBI ScannerC" Drive
+   folder, using the same Google sign-in as Drive backup (scope drive.file: ScannerC sees only the files it makes). The first
+   time Google asks to choose the account; within the hour no window appears again. */
+async function driveUploadFile(blob,name,mime){
+  const meta={name,mimeType:mime,parents:[await driveFolder()]};
+  const r=await dfetch(`${DRIVE.UP}?uploadType=resumable&fields=id,webViewLink`,{method:"POST",headers:{"Content-Type":"application/json; charset=UTF-8"},body:JSON.stringify(meta)});
+  if(!r.ok)throw new Error("Drive refused the upload ("+r.status+")");
+  const loc=r.headers.get("Location");if(!loc)throw new Error("Drive did not return an upload address");
+  const u=await fetch(loc,{method:"PUT",headers:{"Content-Type":mime},body:blob});if(!u.ok)throw new Error("upload failed ("+u.status+")");return u.json();
+}
+async function saveToDrive(){
+  const r=shareCtx;if(!r)return;const box=$("stDriveRes"),btn=$("stDrive");
+  if(!driveHasToken()){try{await driveSignIn(settings.driveEmail?"silent":"choose");}catch(e){
+      if(settings.driveEmail){try{await driveSignIn("choose");}catch(e2){toast("Google Drive: "+e2.message,5000);return;}}else{toast("Google Drive: "+e.message,5000);return;}}
+    if(!settings.driveEmail){try{const a=await dfetch(`${DRIVE.API}/about?fields=user(emailAddress)`);if(a.ok){const j=await a.json();settings.driveEmail=(j.user&&j.user.emailAddress)||"";saveSettings();}}catch(e){}}}
+  btn.disabled=true;box.hidden=false;box.innerHTML='<div class="muted small">Saving to Google Drive…</div>';
+  try{let last=null;for(let i=0;i<r.files.length;i++){const f=r.files[i];box.innerHTML=`<div class="muted small">Saving to Google Drive… ${r.files.length>1?(i+1)+" of "+r.files.length:""}</div>`;
+      last=await driveUploadFile(f,f.name,f.type||"application/octet-stream");}
+    const link=last&&last.webViewLink?last.webViewLink:"https://drive.google.com/drive/folders/"+encodeURIComponent(settings.driveFolder||"");
+    box.innerHTML=`<div class="vf ok"><b>✓ Saved to Google Drive</b><div>${r.files.length>1?r.files.length+" files":escapeHtml(r.files[0].name)} → folder “${DRIVE.FOLDER}”${settings.driveEmail?" · "+escapeHtml(settings.driveEmail):""}</div><div><a href="${link}" target="_blank" rel="noopener">Open in Google Drive</a></div></div>`;
+    toast("Saved to Google Drive");}
+  catch(e){box.innerHTML=`<div class="vf bad"><b>Not saved</b><div>${escapeHtml(e.message)}. Tap Save to Google Drive to try again.</div></div>`;if(e.code===401)drv.token=null;}
+  finally{btn.disabled=false;}
+}
 $("stDl").onclick=async()=>{if(shareCtx)await downloadFiles(shareCtx);};
 
 /* =====================================================================
