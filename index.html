@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.6.3">
+<meta name="ibi-build" content="v2.6.4">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -229,6 +229,7 @@
   #cropMid{touch-action:none}
   #cropSvg{pointer-events:none}
   #cropSvg circle.h.act{r:16;fill:var(--accent)}
+  #cropSvg circle.h.snap{fill:#22e08a;stroke:#fff}
   #cropSvg circle.m.act{r:11;fill:#fff;stroke:var(--accent)}
   #loupe{position:absolute;width:130px;height:130px;border-radius:50%;border:3px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.6);display:none;pointer-events:none;background:#000;overflow:hidden;z-index:5}
   #loupe canvas{width:100%;height:100%;display:block}
@@ -420,7 +421,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.6.3</span>
+    <span class="version" id="versionTag">v2.6.4</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -503,7 +504,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.6.3</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.6.4</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -580,7 +581,7 @@
 <div class="stage" id="cropStage" role="dialog" aria-label="Adjust corners">
   <div class="top">
     <button class="sbtn" id="cropCancel" title="Cancel"><svg><use href="#i-x"/></svg></button>
-    <div class="ttl">Adjust the corners</div>
+    <div class="ttl">Drag a corner · it snaps to the paper</div>
     <button class="sbtn" id="cropRot" title="Rotate"><svg><use href="#i-rot"/></svg></button>
   </div>
   <div class="mid" id="cropMid">
@@ -709,7 +710,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.6.3</b></div>
+      <div class="kv"><span>Version</span><b>v2.6.4</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -746,7 +747,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.6.3";
+const APP_VERSION="v2.6.4";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -1574,7 +1575,84 @@ cropMidEl.addEventListener("pointermove",e=>{
   if(!g.raf)g.raf=requestAnimationFrame(()=>{g.raf=0;if(crop.drag===g&&g.last)cropMove(g);});
 });
 const endCropDrag=e=>{const g=crop.drag;if(!g||(e&&e.pointerId!==g.id))return;if(g.raf){cancelAnimationFrame(g.raf);g.raf=0;}if(g.last)cropMove(g);
-  crop.drag=null;loupe.style.display="none";drawCrop();};
+  crop.drag=null;loupe.style.display="none";
+  if(g.last){try{if(g.c!=null)cropSnapCorner(g.c);else if(g.m!=null)cropSnapEdge(g.m);}catch(_){}}
+  drawCrop();};
+/* v2.6.4 magnetic snap (CEO 18 Oct 2026: "it should stick to the corners exactly when we leave the round portion").
+   On release, look around the handle for the paper's real edges and put it exactly on them, like Microsoft Lens / Adobe Scan.
+   An edge here is a BRIGHTNESS STEP (paper on one side, table on the other) along a straight line close to the outline's own
+   direction, so ruled notebook lines and printed text (no step) are never taken for the paper edge. If no clear edge is
+   found nearby, the handle stays exactly where it was left. */
+function cropGray(){
+  if(crop.gray&&crop.gray.src===crop.src)return crop.gray;
+  const c=crop.src,W=c.width,H=c.height,d=c.getContext("2d").getImageData(0,0,W,H).data,g=new Uint8Array(W*H);
+  for(let i=0,p=0;p<W*H;i+=4,p++)g[p]=(d[i]*77+d[i+1]*150+d[i+2]*29)>>8;
+  crop.gray={src:c,W,H,g};return crop.gray;
+}
+function cropStepLine(G,px,py,ux,uy,R,len,angSpan,t0){
+  /* best straight brightness-step line near (px,py) with direction ~ (ux,uy); samples run along +u from the point for len px.
+     Returns {x,y,ux,uy,score} in source pixels: a point on the line and its unit direction. */
+  const g=G.g,W=G.W,H=G.H,I=(x,y)=>{x=x|0;y=y|0;return (x<0||y<0||x>=W||y>=H)?-1:g[y*W+x];};
+  let best=null;const all=[];
+  for(let a=-angSpan;a<=angSpan+1e-9;a+=2*Math.PI/180){
+    const ca=Math.cos(a),sa=Math.sin(a),vx=ux*ca-uy*sa,vy=ux*sa+uy*ca,nx=-vy,ny=vx;
+    for(let t=-R;t<=R;t++){
+      const qx=px+nx*t,qy=py+ny*t;let si=0,si2=0,so=0,so2=0,n=0;
+      for(let k=t0;k<len;k+=2){const x=qx+vx*k,y=qy+vy*k;
+        const i1=I(x+nx*3,y+ny*3),i2=I(x+nx*6,y+ny*6),o1=I(x-nx*3,y-ny*3),o2=I(x-nx*6,y-ny*6);
+        if(i1<0||i2<0||o1<0||o2<0)continue;const vi=(i1+i2)/2,vo=(o1+o2)/2;si+=vi;si2+=vi*vi;so+=vo;so2+=vo*vo;n++;}
+      if(n<8)continue;
+      /* paper and table are each EVEN along a real paper edge; a line of handwriting has a busy side, so it scores low */
+      const mi=si/n,mo=so/n,sdi=Math.sqrt(Math.max(0,si2/n-mi*mi)),sdo=Math.sqrt(Math.max(0,so2/n-mo*mo));
+      const sc=Math.abs(mi-mo)/(1+(sdi+sdo)/10)*(1-0.25*Math.abs(t)/R);all.push(sc);
+      if(!best||sc>best.score)best={x:qx,y:qy,ux:vx,uy:vy,score:sc};
+    }
+  }
+  if(best){all.sort((x,y)=>x-y);best.noise=all[all.length>>1]||0;best.ok=best.score>=Math.max(SNAP_MIN,best.noise*3);}
+  return best;
+}
+function cropMeet(a,b){ /* intersection of two lines given as point + direction */
+  const den=a.ux*b.uy-a.uy*b.ux;if(Math.abs(den)<1e-6)return null;
+  const t=((b.x-a.x)*b.uy-(b.y-a.y)*b.ux)/den;return [a.x+a.ux*t,a.y+a.uy*t];
+}
+const SNAP_MIN=3;   /* an edge must also stand 3x above the spot's own background (white paper on a white table is a small step) */
+function cropSnapCorner(i){
+  const G=cropGray(),k=crop.srcScale,P=crop.pts.map(p=>[p[0]*k,p[1]*k]),c=P[i],R=Math.round(clamp(Math.max(G.W,G.H)*0.06,24,96));
+  const side=j=>{const q=P[j];let ux=q[0]-c[0],uy=q[1]-c[1];const L=Math.hypot(ux,uy)||1;ux/=L;uy/=L;
+    return cropStepLine(G,c[0],c[1],ux,uy,R,Math.min(R*2.2,L*0.6),12*Math.PI/180,4);};
+  const a=side((i+3)%4),b=side((i+1)%4);
+  if(!a||!b||!a.ok||!b.ok)return false;
+  const m=cropMeet(a,b);if(!m||Math.hypot(m[0]-c[0],m[1]-c[1])>R*1.2)return false;
+  /* a real paper corner: inside its angle looks clearly different from outside it (paper vs table). Crossings of wood grain
+     or of lines in the middle of a written page fail this, so the handle stays where it was left. */
+  {const g=G.g,W=G.W,H=G.H,va=[a.ux,a.uy],vb=[b.ux,b.uy];let bx=va[0]+vb[0],by=va[1]+vb[1];const bl=Math.hypot(bx,by)||1;bx/=bl;by/=bl;
+   const toN=(P0)=>[P0[0]-m[0],P0[1]-m[1]];const pa=toN(P[(i+3)%4]),pb=toN(P[(i+1)%4]);
+   if(bx*(pa[0]+pb[0])+by*(pa[1]+pb[1])<0){bx=-bx;by=-by;}
+   const smp=(sg)=>{let acc=0,n=0;for(const r of [7,10,13,16])for(const sp of [-0.25,0,0.25]){const cx=Math.cos(sp),sx=Math.sin(sp),dx=bx*cx-by*sx,dy=bx*sx+by*cx;
+     const x=Math.round(m[0]+sg*dx*r),y=Math.round(m[1]+sg*dy*r);if(x<0||y<0||x>=W||y>=H)continue;acc+=g[y*W+x];n++;}return n?acc/n:null;};
+   const at=(dx,dy)=>{let acc=0,n=0;const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;for(const r of [7,10,13,16])for(const sp of [-0.25,0,0.25]){const cx=Math.cos(sp),sx=Math.sin(sp),ex=dx*cx-dy*sx,ey=dx*sx+dy*cx;
+     const x=Math.round(m[0]+ex*r),y=Math.round(m[1]+ey*r);if(x<0||y<0||x>=W||y>=H)continue;acc+=g[y*W+x];n++;}return n>3?acc/n:null;};
+   /* a true corner has paper in ONE of its four quadrants only: inside differs from outside AND from both sides across each edge */
+   const vin=smp(1),vout=smp(-1),va2=at(va[0]-vb[0],va[1]-vb[1]),vb2=at(vb[0]-va[0],vb[1]-va[1]),thr=Math.max(SNAP_MIN,0.5*Math.min(a.score,b.score));
+   if(vin==null)return false;for(const v of [vout,va2,vb2])if(v!=null&&Math.abs(vin-v)<thr)return false;
+   const outs=[vout,va2,vb2].filter(v=>v!=null);if(outs.length<2)return false;
+   const om=outs.reduce((x,y)=>x+y,0)/outs.length,spread=Math.max(...outs)-Math.min(...outs);
+   if(spread>0.5*Math.abs(vin-om))return false;   /* the three outside quadrants are one surface (the table) */}
+  const q=crop.pts.map(p=>p.slice());q[i]=[clamp(m[0]/k,0,crop.w),clamp(m[1]/k,0,crop.h)];
+  if(!cropConvex(q))return false;crop.pts=q;cropSnapFlash(i);return true;
+}
+function cropSnapEdge(i){
+  const G=cropGray(),k=crop.srcScale,P=crop.pts.map(p=>[p[0]*k,p[1]*k]),j=(i+1)%4,a=P[i],b=P[j],R=Math.round(clamp(Math.max(G.W,G.H)*0.04,18,56));
+  let ux=b[0]-a[0],uy=b[1]-a[1];const L=Math.hypot(ux,uy)||1;ux/=L;uy/=L;
+  const e=cropStepLine(G,a[0],a[1],ux,uy,R,L*0.92,6*Math.PI/180,L*0.08);if(!e||!e.ok)return false;
+  const prev=P[(i+3)%4],next=P[(j+1)%4];
+  const la={x:a[0],y:a[1],ux:prev[0]-a[0],uy:prev[1]-a[1]},lb={x:b[0],y:b[1],ux:next[0]-b[0],uy:next[1]-b[1]};
+  const na=cropMeet(e,la),nb=cropMeet(e,lb);if(!na||!nb)return false;
+  if(Math.hypot(na[0]-a[0],na[1]-a[1])>R*1.5||Math.hypot(nb[0]-b[0],nb[1]-b[1])>R*1.5)return false;
+  const q=crop.pts.map(p=>p.slice());q[i]=[clamp(na[0]/k,0,crop.w),clamp(na[1]/k,0,crop.h)];q[j]=[clamp(nb[0]/k,0,crop.w),clamp(nb[1]/k,0,crop.h)];
+  if(!cropConvex(q))return false;crop.pts=q;cropSnapFlash(i,j);return true;
+}
+function cropSnapFlash(...ix){vibrate(12);requestAnimationFrame(()=>{if(!cropEls)return;ix.forEach(n=>cropEls.h[n]&&cropEls.h[n].classList.add("snap"));setTimeout(()=>cropEls&&cropEls.h.forEach(h=>h.classList.remove("snap")),350);});}
 cropMidEl.addEventListener("pointerup",endCropDrag);cropMidEl.addEventListener("pointercancel",endCropDrag);
 function showLoupe(pt){
   const z=2.2,R=loupeC.width/2;const ctx=loupeC.getContext("2d");ctx.fillStyle="#000";ctx.fillRect(0,0,loupeC.width,loupeC.height);
