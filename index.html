@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.8.0">
+<meta name="ibi-build" content="v2.8.1">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -428,7 +428,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.8.0</span>
+    <span class="version" id="versionTag">v2.8.1</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -512,7 +512,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.8.0</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.8.1</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -735,7 +735,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.8.0</b></div>
+      <div class="kv"><span>Version</span><b>v2.8.1</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -756,7 +756,7 @@
       <li><b>Tap the blue camera button.</b> Allow the camera when the phone asks (once).</li>
       <li><b>Hold the phone flat over the page.</b> A blue outline appears on the document edges. In <b>Auto</b> (the default) keep still and the photo is taken for you. Switch to <b>Manual</b> at the top to tap the white shutter yourself and then drag the corners.</li>
       <li><b>Keep scanning</b> for more pages. The counter at the bottom-right shows how many you have. Tap <b>Done</b> when finished.</li>
-      <li><b>Check each page.</b> Pick a filter — <b>Auto</b> gives true colours on clean white paper, <b>Magic colour</b> is brighter and bolder, <b>Photo</b> keeps photos and ID pictures natural, <b>Whiteboard</b> cleans boards, <b>B&amp;W</b> is crisp text for printing — <b>Crop</b> to fix corners, <b>Rotate</b> if needed, <b>Text</b> to read the words. To re-arrange, press and hold a page in <b>Pages</b> and drag it.</li>
+      <li><b>Check each page.</b> Pick a filter — <b>Magic colour</b> (the default) is bright and bold, <b>Auto</b> gives true colours on clean white paper, <b>Photo</b> keeps photos and ID pictures natural, <b>Whiteboard</b> cleans boards, <b>B&amp;W</b> is crisp text for printing — <b>Crop</b> to fix corners, <b>Rotate</b> if needed, <b>Text</b> to read the words. To re-arrange, press and hold a page in <b>Pages</b> and drag it.</li>
       <li><b>Share / Export.</b> Choose PDF, tap <b>Share…</b>, then pick WhatsApp, Gmail or Google Drive from the phone's share sheet.</li>
     </ol>
     <div class="muted small">Tips: good light and no shadow from your hand. White paper on a white table works, but a darker or coloured surface under the page gives the fastest, surest edge detection. If the edges are not found, just tap the shutter and drag the corners. <b>ID card</b> mode puts the front and back on one page. <b>QR / Barcode</b> reads codes. Everything stays on this phone — nothing is uploaded.</div>
@@ -772,7 +772,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.8.0";
+const APP_VERSION="v2.8.1";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -846,9 +846,11 @@ let _audio;function shutterSound(){if(!settings.fx)return;try{_audio=_audio||new
    Settings + theme
 ===================================================================== */
 const SET_KEY="ibi_scannerc_settings_v2";
-const DEFAULTS={theme:"dark",ts:1,filter:"auto",auto:true,review:false,hires:true,fx:true,size:"a4",q:"balanced",lang:"eng",grid:false,helpSeen:false,installDismissed:0};
+const DEFAULTS={theme:"dark",ts:1,filter:"enhance",auto:true,review:false,hires:true,fx:true,size:"a4",q:"balanced",lang:"eng",grid:false,helpSeen:false,installDismissed:0};
 let settings=Object.assign({},DEFAULTS);
 try{Object.assign(settings,JSON.parse(localStorage.getItem(SET_KEY)||"{}"));}catch(e){}
+/* v2.8.1 (CEO 18 Oct 2026): Magic colour is the default filter for new scans — switch every phone over ONCE; a default chosen later in Settings is kept */
+if(!settings.magicDefault){settings.magicDefault=1;settings.filter="enhance";try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}}
 function saveSettings(){try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}}
 function applyTheme(){document.body.setAttribute("data-theme",settings.theme);$("themeToggle").checked=settings.theme==="light";document.documentElement.style.setProperty("--ts",settings.ts);document.querySelector('meta[name="theme-color"]').content="#000000";}
 applyTheme();
