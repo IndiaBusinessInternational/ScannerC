@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.9.0">
+<meta name="ibi-build" content="v2.9.1">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -430,7 +430,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.9.0</span>
+    <span class="version" id="versionTag">v2.9.1</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -514,7 +514,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.9.0</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.9.1</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -738,7 +738,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.9.0</b></div>
+      <div class="kv"><span>Version</span><b>v2.9.1</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -775,7 +775,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.9.0";
+const APP_VERSION="v2.9.1";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -2355,7 +2355,9 @@ function driveSignIn(mode){
   return new Promise(async(res,rej)=>{
     try{await loadGis();}catch(e){rej(e);return;}
     try{
-      const c=google.accounts.oauth2.initTokenClient({client_id:DRIVE.CLIENT_ID,scope:DRIVE.SCOPE,login_hint:settings.driveEmail||undefined,
+      /* include_granted_scopes:false — the OAuth project is shared with the IBI YouTube tools; without it Google adds the account's YouTube
+         grants to this request and blocks it ("scopes that cannot be requested together", CEO 19 Oct 2026). Ask for Drive only. */
+      const c=google.accounts.oauth2.initTokenClient({client_id:DRIVE.CLIENT_ID,scope:DRIVE.SCOPE,include_granted_scopes:false,login_hint:settings.driveEmail||undefined,
         callback:r=>{if(r&&r.access_token){drv.token=r.access_token;drv.exp=Date.now()+(parseInt(r.expires_in,10)||3600)*1000;res(true);}
           else{const e=new Error((r&&(r.error_description||r.error))||"Google sign-in was cancelled");e.type=r&&r.error;rej(e);}},
         error_callback:e=>{const t=e&&e.type;const er=new Error(t==="popup_closed"?"Google sign-in window was closed":t==="popup_failed_to_open"?"The browser blocked the Google sign-in window":"Google sign-in failed");er.type=t;rej(er);}});

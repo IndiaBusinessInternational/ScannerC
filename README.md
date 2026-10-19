@@ -1,4 +1,4 @@
-# IBI ScannerC v2.9.0
+# IBI ScannerC v2.9.1
 
 Scan documents with your phone, the way Google Scan and Adobe Scan do — in the browser, with nothing uploaded.
 
@@ -36,6 +36,7 @@ Badge (`versionTag`), `ibi-build` meta, footer, `service-worker.js` `CACHE_VERSI
 
 ## Changelog
 
+- **v2.9.1 (19 Oct 2026)** — Google Drive sign-in fix: on an account that had given YouTube access to the same Google project (the IBI YouTube tools), Google blocked the Drive sign-in with "Access blocked: Authorization Error — scopes that cannot be requested together". The sign-in now asks for Drive only (`include_granted_scopes: false`).
 - **v2.9.0 (18 Oct 2026)** — Share to: **Save to Google Drive** uploads the exported PDF (or images) straight into the "IBI ScannerC" Drive folder (same drive.file sign-in as backup; Open in Drive link). Separate **WhatsApp** and **WhatsApp Business** buttons attach the PDF itself and open the phone's share list (a web app may hand files only to that list); on a computer, download + WhatsApp Web.
 - **v2.8.3 (18 Oct 2026)** — ID-card photos (front and back sides) also use Magic colour (CEO).
 - **v2.8.2 (18 Oct 2026)** — Magic colour is ALWAYS the filter for new scans (CEO: "always keep Magic Color as default"); the "Default filter for new scans" setting is removed. Any page can still be switched with Filters. ID-card sides stay on Auto (true skin tones).
