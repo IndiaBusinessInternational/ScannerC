@@ -4,16 +4,17 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.9.1">
+<meta name="ibi-build" content="v2.9.2">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="India Business International">
 <meta property="og:title" content="IBI ScannerC">
+<meta property="og:image:secure_url" content="https://scanner.indiabusinessinternational.online/og-banner.jpg">
 <meta property="og:description" content="Scan documents with your phone — auto crop, enhance, multi-page PDF, OCR, share to WhatsApp, Gmail or Drive. On-device, no upload.">
 <meta property="og:url" content="https://scanner.indiabusinessinternational.online/">
-<meta property="og:image" content="https://scanner.indiabusinessinternational.online/og-banner.png">
-<meta property="og:image:type" content="image/png">
+<meta property="og:image" content="https://scanner.indiabusinessinternational.online/og-banner.jpg">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="IBI ScannerC — India Business International">
@@ -21,7 +22,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="IBI ScannerC">
 <meta name="twitter:description" content="Scan documents with your phone — auto crop, enhance, multi-page PDF, OCR, share to WhatsApp, Gmail or Drive.">
-<meta name="twitter:image" content="https://scanner.indiabusinessinternational.online/og-banner.png">
+<meta name="twitter:image" content="https://scanner.indiabusinessinternational.online/og-banner.jpg">
 
 <meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
@@ -29,6 +30,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="ScannerC">
 <link rel="manifest" href="manifest.json">
+<script src="ibi-share.js" defer data-slot="#appHeader .hdr-acts"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
@@ -430,7 +432,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.9.1</span>
+    <span class="version" id="versionTag">v2.9.2</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -514,7 +516,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.9.1</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.9.2</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -738,7 +740,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.9.1</b></div>
+      <div class="kv"><span>Version</span><b>v2.9.2</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -775,7 +777,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.9.1";
+const APP_VERSION="v2.9.2";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;

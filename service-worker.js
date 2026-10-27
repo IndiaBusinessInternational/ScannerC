@@ -1,10 +1,10 @@
 /* IBI ScannerC — Service Worker
- * CACHE_VERSION must move with the app version badge on every release (v2.0.0 -> ibi-scannerc-v2.9.1).
+ * CACHE_VERSION must move with the app version badge on every release (v2.0.0 -> ibi-scannerc-v2.9.2).
  */
-const CACHE_VERSION = 'ibi-scannerc-v2.9.1';
+const CACHE_VERSION = 'ibi-scannerc-v2.9.2';
 const RUNTIME = 'ibi-scannerc-runtime-v1';   // CDN libraries + OCR language data (versioned URLs, safe to keep)
 const SHARE = 'ibi-scannerc-share';
-const APP_SHELL = ['./', './index.html', './manifest.json', './logo.png', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-64.png'];
+const APP_SHELL = ['./', './index.html', './manifest.json', './logo.png', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-64.png', './ibi-share.js'];
 const LIB_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'docs.opencv.org', 'tessdata.projectnaptha.com', 'unpkg.com'];
 
 self.addEventListener('install', (event) => {
