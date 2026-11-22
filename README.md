@@ -1,4 +1,4 @@
-# IBI ScannerC v2.9.3
+# IBI ScannerC v2.10.0
 
 Scan documents with your phone, the way Google Scan and Adobe Scan do — in the browser, with nothing uploaded.
 
@@ -36,6 +36,7 @@ Badge (`versionTag`), `ibi-build` meta, footer, `service-worker.js` `CACHE_VERSI
 
 ## Changelog
 
+- **v2.10.0 (22 Nov 2026)** — Shadow removal. Scans no longer keep shadows: fold creases, crumple shading, grey edges, and hand or phone shadows (including their blue tint) now come out as white paper. A second, fine light map (about 4 px detail) runs after the page light map. It keeps the paper background, drops the ink, and separates soft-edged shading from sharp-edged print, so colour bands, pale boxes, stamps, photos and signatures keep their colours. Magic colour also stops turning faint camera colour noise on white paper into cyan or orange specks. Shadow test kit: `Test Pages or Trials/ScannerC colour test kit/gen_shadow.py`.
 - **v2.9.3 (27 Oct 2026)** — Narrow phones (400px and less): header gaps 6/4px, header icons 36px and the Share icon at 90%, so the new Share icon no longer squeezes the logo (at 360px with Install showing it had shrunk from 66px to 18px wide).
 - **v2.9.2 (27 Oct 2026)** — WhatsApp link preview + Share this app: the preview banner is now a 1200×630 JPEG under 300 KB (`og-banner.jpg`, with `og:image:type` image/jpeg; `og-banner.png` kept), so WhatsApp shows the large card. A round Share button (`ibi-share.js`, IBI Share v1.0) at the end of the header shares the app link to WhatsApp, Facebook, X, Telegram, Email, Copy link or More apps (Founder: "all web apps should have a sharing link too").
 - **v2.9.1 (19 Oct 2026)** — Google Drive sign-in fix: on an account that had given YouTube access to the same Google project (the IBI YouTube tools), Google blocked the Drive sign-in with "Access blocked: Authorization Error — scopes that cannot be requested together". The sign-in now asks for Drive only (`include_granted_scopes: false`).

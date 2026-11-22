@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
 <title>IBI ScannerC</title>
-<meta name="ibi-build" content="v2.9.3">
+<meta name="ibi-build" content="v2.10.0">
 <meta name="description" content="IBI ScannerC — scan documents with your phone camera: auto edge detection, perspective correction, filters, multi-page PDF, OCR, and share to WhatsApp, Gmail or Drive. Everything runs on your device.">
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website">
@@ -434,7 +434,7 @@
 
 <header class="app" id="appHeader">
   <div class="bar">
-    <span class="version" id="versionTag">v2.9.3</span>
+    <span class="version" id="versionTag">v2.10.0</span>
     <div class="brand"><img class="logo-img" src="logo.png" alt="India Business International"></div>
     <div class="hdr-acts">
       <button class="ibtn" id="installBtn" title="Install app" hidden><svg><use href="#i-install"/></svg></button>
@@ -518,7 +518,7 @@
   </section>
 </main>
 
-<footer>IBI ScannerC <span id="footVer">v2.9.3</span> · India Business International · All processing happens on this device.</footer>
+<footer>IBI ScannerC <span id="footVer">v2.10.0</span> · India Business International · All processing happens on this device.</footer>
 
 <!-- FAB (library) -->
 <div class="fab" id="fab">
@@ -742,7 +742,7 @@
       <div class="kv"><span>Room for about</span><b id="setRoom">—</b></div>
       <div class="kv"><span>Documents</span><b id="setDocs">—</b></div>
       <div class="kv"><span>Edge-detection engine</span><b id="setCv">not loaded</b></div>
-      <div class="kv"><span>Version</span><b>v2.9.3</b></div>
+      <div class="kv"><span>Version</span><b>v2.10.0</b></div>
     </div></div>
     <div class="muted small" style="margin-top:8px">Scans are kept in this browser on this phone until you delete them. Clearing Chrome's data for this site, or uninstalling Chrome, removes them. Share important PDFs to Google Drive or Gmail, or use <b>Backup all (ZIP)</b>.</div>
     <div class="row" style="margin-top:12px"><button class="btn sm" id="setProtect" hidden><svg><use href="#i-lock"/></svg>Protect my scans</button><button class="btn sm" id="setBackup"><svg><use href="#i-dl"/></svg>Backup all (ZIP)</button><button class="btn sm danger" id="setWipe"><svg><use href="#i-trash"/></svg>Delete all scans</button></div>
@@ -779,7 +779,7 @@
 <script>
 (function(){
 "use strict";
-const APP_VERSION="v2.9.3";
+const APP_VERSION="v2.10.0";
 const $=id=>document.getElementById(id);
 const $$=(sel,root)=>Array.from((root||document).querySelectorAll(sel));
 document.getElementById("versionTag").textContent=APP_VERSION;
@@ -996,6 +996,73 @@ function flareLevel(d,n,pm){
   const f=[r/k,g/k,bl/k];
   for(let c=0;c<3;c++){const m=median(pm.E[c]),mn=Math.min(...pm.E[c]);f[c]=Math.max(0,Math.min(f[c],0.12*m,0.5*mn));}
   return f;}
+/* v2.10 shadow lift (CEO 22 Nov 2026: shadows in scanned CPM Metals invoices). The light map above works on ~1% cells and keeps
+   only cells near the local brightest paper, so fold creases, crumple shading, edge shading and bluish hand/phone shadows stayed grey.
+   Here the paper background is found again at ~4 px detail on the already-flattened page: per block the colour of its brightest
+   quarter, then a morphological closing per channel (removes ink strokes, keeps shadow outlines in place). Off-white areas are split
+   by their EDGES: printed fills (bands, pale boxes, photos, chart patches, big letters) have sharp walls; shadows fade out softly.
+   Soft-edged areas and plain paper get a per-channel gain that makes the paper white (this also removes the blue cast of shadows);
+   printed areas take the gain of the paper around them, so their colours stay true. */
+function morphGrid(a,gw,gh,r,mx){
+  const t=new Float32Array(gw*gh),o=new Float32Array(gw*gh);
+  for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){let m=a[y*gw+x];for(let k=Math.max(0,x-r);k<=Math.min(gw-1,x+r);k++){const v=a[y*gw+k];if(mx?v>m:v<m)m=v;}t[y*gw+x]=m;}
+  for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){let m=t[y*gw+x];for(let k=Math.max(0,y-r);k<=Math.min(gh-1,y+r);k++){const v=t[k*gw+x];if(mx?v>m:v<m)m=v;}o[y*gw+x]=m;}
+  return o;}
+function shadowGain(d,w,h){
+  const q=Math.max(1,Math.round(Math.max(w,h)/700)),gw=Math.ceil(w/q),gh=Math.ceil(h/q),N=gw*gh;
+  let B=[new Float32Array(N),new Float32Array(N),new Float32Array(N)];
+  const ls=new Int32Array(q*q),id=new Int32Array(q*q);
+  for(let by=0;by<gh;by++)for(let bx=0;bx<gw;bx++){
+    const y0=by*q,x0=bx*q,y1=Math.min(h,y0+q),x1=Math.min(w,x0+q);let m=0;
+    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const i=(y*w+x)*4;ls[m]=d[i]*77+d[i+1]*150+d[i+2]*29;id[m]=i;m++;}
+    const k=Math.max(1,Math.ceil(m/4));let r=0,g=0,b=0;
+    for(let t=0;t<k;t++){let bi=0,bv=-1;for(let j=0;j<m;j++)if(ls[j]>bv){bv=ls[j];bi=j;}ls[bi]=-2;const i=id[bi];r+=LIN[d[i]];g+=LIN[d[i+1]];b+=LIN[d[i+2]];}
+    const c=by*gw+bx;B[0][c]=r/k;B[1][c]=g/k;B[2][c]=b/k;}
+  const rr=Math.max(2,Math.round(Math.max(gw,gh)/350));
+  B=B.map(a=>morphGrid(morphGrid(a,gw,gh,rr,true),gw,gh,rr,false));
+  const P=B.map(a=>{const o=new Float32Array(N);for(let c=0;c<N;c++)o[c]=Math.sqrt(Math.max(0,a[c]));return o;});
+  const dev=new Uint8Array(N),sh=new Uint8Array(N);
+  for(let c=0;c<N;c++)if(Math.min(B[0][c],B[1][c],B[2][c])<0.92)dev[c]=1;
+  /* sharp wall = a real step (the 3-step change is clear) that happens within ONE step — not a gentle ramp, not paper grain */
+  const P0=P[0],P1=P[1],P2=P[2];
+  for(let y=1;y<gh-1;y++)for(let x=1;x<gw-1;x++){const c=y*gw+x;
+    for(let dir=0;dir<2;dir++){const s=dir?gw:1,ok3=dir?(y>=3&&y<gh-3):(x>=3&&x<gw-3);if(!ok3)continue;
+      const n1=Math.max(Math.abs(P0[c+s]-P0[c-s]),Math.abs(P1[c+s]-P1[c-s]),Math.abs(P2[c+s]-P2[c-s]));
+      if(n1<0.03)continue;
+      const n3=Math.max(Math.abs(P0[c+3*s]-P0[c-3*s]),Math.abs(P1[c+3*s]-P1[c-3*s]),Math.abs(P2[c+3*s]-P2[c-3*s]));
+      if(n3>=0.05&&n1>=0.55*n3){sh[c]=1;break;}}}
+  const bar=morphGrid(sh,gw,gh,1,true);
+  /* regions of off-white background between sharp walls; a region is a SHADOW when a good part of its outline fades softly
+     into plain paper (printed fills are walled in; a shadow always has a soft rim) */
+  const lab=new Int32Array(N).fill(-1),q2=new Int32Array(N),isSh=[],rect=[];
+  for(let s0=0;s0<N;s0++){if(!dev[s0]||bar[s0]||lab[s0]>=0)continue;const L=isSh.length;let hd=0,tl=0,soft=0,x0=gw,x1=0,y0=gh,y1=0;q2[tl++]=s0;lab[s0]=L;
+    while(hd<tl){const c=q2[hd++],x=c%gw,y=(c-x)/gw;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+      for(let j=0;j<4;j++){const nb=j===0?(x>0?c-1:-1):j===1?(x<gw-1?c+1:-1):j===2?c-gw:c+gw;if(nb<0||nb>=N)continue;
+        if(bar[nb])continue;if(!dev[nb]){soft++;continue;}if(lab[nb]<0){lab[nb]=L;q2[tl++]=nb;}}}
+    const sh_=soft>=4&&soft>=0.5*Math.sqrt(tl);isSh.push(sh_);
+    rect.push(!sh_&&tl>=9&&tl>=0.6*(x1-x0+1)*(y1-y0+1));}
+  /* crisp-edged crumples and fold streaks: light NEUTRAL grey that is not a rectangle (printed grey fills are boxes) and not
+     next to colour also counts as shading — even where it is all edge. Dark grey (text, logos) never does. */
+  const neu=c=>{const b0=B[0][c],b1=B[1][c],b2=B[2][c],s=b0+b1+b2+1e-6;return Math.max(Math.abs(b0/s-1/3),Math.abs(b1/s-1/3),Math.abs(b2/s-1/3))<=0.04;};
+  const prot=new Uint8Array(N);for(let c=0;c<N;c++)if(dev[c]&&((lab[c]>=0&&rect[lab[c]])||!neu(c)))prot[c]=1;
+  const protD=morphGrid(prot,gw,gh,2,true);
+  const V=new Float32Array(N),G=[new Float32Array(N),new Float32Array(N),new Float32Array(N)];let nv=0;
+  for(let c=0;c<N;c++){
+    const b0=B[0][c],b1=B[1][c],b2=B[2][c],s=b0+b1+b2+1e-6,l=b0*.2126+b1*.7152+b2*.0722;
+    if(bar[c]||(dev[c]&&!isSh[lab[c]])){if(protD[c]||l<0.55||!neu(c))continue;}
+    if(l<0.1||Math.max(Math.abs(b0/s-1/3),Math.abs(b1/s-1/3),Math.abs(b2/s-1/3))>0.1)continue;
+    V[c]=1;nv++;for(let k=0;k<3;k++)G[k][c]=Math.min(5,Math.max(0.85,1/Math.max(1e-3,B[k][c])));}
+  if(nv<N*0.05)return null;
+  const S=G.map(a=>Float32Array.from(a)),E=[new Float32Array(N),new Float32Array(N),new Float32Array(N)],done=new Uint8Array(N);let left=N;
+  for(const r of [0,2,6,16,48,128,384]){
+    const vb=r?boxGrid(V,gw,gh,r):V,sb=r?S.map(a=>boxGrid(a,gw,gh,r)):S;
+    for(let c=0;c<N;c++){if(done[c]||vb[c]<(r?1.5:0.5))continue;for(let k=0;k<3;k++)E[k][c]=sb[k][c]/vb[c];done[c]=1;left--;}
+    if(!left)break;}
+  for(let c=0;c<N;c++)if(!done[c])for(let k=0;k<3;k++)E[k][c]=1;
+  const one=new Float32Array(N).fill(1),nb=boxGrid(one,gw,gh,1);
+  for(let k=0;k<3;k++){const b=boxGrid(E[k],gw,gh,1);for(let c=0;c<N;c++)E[k][c]=b[c]/nb[c];}
+  return {q,gw,gh,E};
+}
 /* filter recipes: kn = white-clean knee (lum lo,hi), nc = neutral chroma limits it applies under, sat, sharpen */
 const RECIPE={auto:{kn:[0.88,0.97],nc:[0.06,0.13],sat:1.15,sh:0.7,ink:0.9},
   enhance:{kn:[0.74,0.90],nc:[0.10,0.22],sat:1.45,vib:0.55,curve:0.22,sh:1.15,ink:1.35},   /* v2.7.0 Magic colour: vivid and bold (CEO: "more vibrant and more colourful") */
@@ -1033,18 +1100,33 @@ function applyFilter(d,w,h,filter,bright,contrast,sat2){
     for(let x=0;x<w;x++){let u=x/cs-0.5;u=u<0?0:u>gw-1?gw-1:u;X0[x]=u|0;X1[x]=Math.min(X0[x]+1,gw-1);FX[x]=u-X0[x];}
     const rowE=[new Float32Array(gw),new Float32Array(gw),new Float32Array(gw)],f0=f[0],f1=f[1],f2=f[2];
     const k0=kn?kn[0]:2,k1=kn?kn[1]:3,n0=kn?nc[0]:0,n1=kn?nc[1]:1;
+    const fine=!pm.global; /* v2.10: two passes — flatten, find the remaining shadows, lift them, then the look */
     for(let y=0;y<h;y++){let v=y/cs-0.5;v=v<0?0:v>gh-1?gh-1:v;const y0=v|0,y1=Math.min(y0+1,gh-1),fy=v-y0;
       for(let k=0;k<3;k++){const M=E[k],o=rowE[k],fk=f[k];for(let gx=0;gx<gw;gx++){const p=M[y0*gw+gx]+(M[y1*gw+gx]-M[y0*gw+gx])*fy;o[gx]=1/Math.max(1e-4,p-fk);}}
       const e0=rowE[0],e1=rowE[1],e2=rowE[2];
       for(let x=0,i=y*w*4;x<w;x++,i+=4){const a=X0[x],b=X1[x],fx=FX[x];
-        let r=toG((LIN[d[i]]-f0)*(e0[a]+(e0[b]-e0[a])*fx)),g=toG((LIN[d[i+1]]-f1)*(e1[a]+(e1[b]-e1[a])*fx)),bb=toG((LIN[d[i+2]]-f2)*(e2[a]+(e2[b]-e2[a])*fx));
+        const r=toG((LIN[d[i]]-f0)*(e0[a]+(e0[b]-e0[a])*fx)),g=toG((LIN[d[i+1]]-f1)*(e1[a]+(e1[b]-e1[a])*fx)),bb=toG((LIN[d[i+2]]-f2)*(e2[a]+(e2[b]-e2[a])*fx));
+        if(fine){d[i]=r;d[i+1]=g;d[i+2]=bb;}else look(i,r,g,bb);}}
+    if(fine){const sg=shadowGain(d,w,h);
+      if(!sg){for(let i=0;i<n*4;i+=4)look(i,d[i],d[i+1],d[i+2]);}
+      else{const {q,gw:sw,gh:sh2,E:SE}=sg,SX0=new Int32Array(w),SX1=new Int32Array(w),SFX=new Float32Array(w),rg=[new Float32Array(sw),new Float32Array(sw),new Float32Array(sw)];
+        for(let x=0;x<w;x++){let u=(x+0.5)/q-0.5;u=u<0?0:u>sw-1?sw-1:u;SX0[x]=u|0;SX1[x]=Math.min(SX0[x]+1,sw-1);SFX[x]=u-SX0[x];}
+        for(let y=0;y<h;y++){let v=(y+0.5)/q-0.5;v=v<0?0:v>sh2-1?sh2-1:v;const y0=v|0,y1=Math.min(y0+1,sh2-1),fy=v-y0;
+          for(let k=0;k<3;k++){const M=SE[k],o=rg[k];for(let gx=0;gx<sw;gx++)o[gx]=M[y0*sw+gx]+(M[y1*sw+gx]-M[y0*sw+gx])*fy;}
+          const g0=rg[0],g1=rg[1],g2=rg[2];
+          for(let x=0,i=y*w*4;x<w;x++,i+=4){const a=SX0[x],b=SX1[x],fx=SFX[x];
+            look(i,toG(LIN[d[i]]*(g0[a]+(g0[b]-g0[a])*fx)),toG(LIN[d[i+1]]*(g1[a]+(g1[b]-g1[a])*fx)),toG(LIN[d[i+2]]*(g2[a]+(g2[b]-g2[a])*fx)));}}}}
+    function look(i,r,g,bb){
         let l=(r*.299+g*.587+bb*.114)/255;
+        /* v2.10: faint colour specks on near-white paper (camera colour noise, paper fibres) are made neutral BEFORE the colour
+           boost, so Magic colour no longer paints them cyan/orange; real pale tints (note boxes, stamps) are stronger than this */
+        if(vib&&l>0.8){const C0=(Math.max(r,g,bb)-Math.min(r,g,bb))/255;if(C0<0.09){const t=ss(0.035,0.09,C0),L8=l*255;r=L8+(r-L8)*t;g=L8+(g-L8)*t;bb=L8+(bb-L8)*t;}}
         if(ik&&l<0.95){const C0=(Math.max(r,g,bb)-Math.min(r,g,bb))/255,q=ik*(1-ss(0.08,0.22,C0));if(q>0){const nl=Math.pow(l,1+q*(1-l)),m=l>0.004?nl/l:1;r*=m;g*=m;bb*=m;l=nl;}}
         if(cu&&l<1){const sl=l*l*(3-2*l),nl=l+(sl-l)*cu*2,m=l>0.004?nl/l:1;r*=m;g*=m;bb*=m;l=nl;}
         if(vib){const L8=l*255,C=(Math.max(r,g,bb)-Math.min(r,g,bb))/255,k=1+((sat-1)+vib*(1-ss(0.3,0.7,C)))*ss(0.02,0.08,C);r=L8+(r-L8)*k;g=L8+(g-L8)*k;bb=L8+(bb-L8)*k;}
         else if(sat!==1){const L8=l*255;r=L8+(r-L8)*sat;g=L8+(g-L8)*sat;bb=L8+(bb-L8)*sat;}
         if(l>k0){const C=(Math.max(r,g,bb)-Math.min(r,g,bb))/255,t=ss(k0,k1,l)*(1-ss(n0,n1,C));if(t>0){r+=(255-r)*t;g+=(255-g)*t;bb+=(255-bb)*t;}}
-        d[i]=r;d[i+1]=g;d[i+2]=bb;}}
+        d[i]=r;d[i+1]=g;d[i+2]=bb;}
     if(R.sh)sharpenL(d,w,h,R.sh);
     if(filter==="bw")bwThreshold(d,w,h);
   }
